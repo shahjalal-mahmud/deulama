@@ -24,11 +24,13 @@ android {
 
     buildTypes {
         debug {
-            // Emulator -> host loopback. Adjust the path segment ("/hangug-api/public")
-            // to match wherever your PHP project actually lives under your local
-            // server root (XAMPP/Laragon htdocs, etc).
-            // Physical device on same Wi-Fi? swap 10.0.2.2 for your machine's LAN IP.
-            buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1/hangug-api/public/\"")
+            // Emulator -> host loopback alias. 10.0.2.2 inside the emulator
+            // resolves to the host machine's 127.0.0.1 (where XAMPP/Laragon runs).
+            // Adjust the path segment ("/hangug-api/public") to match wherever
+            // your PHP project actually lives under your local server root.
+            // Physical device on same Wi-Fi? swap 10.0.2.2 for your machine's
+            // LAN IP (e.g. 192.168.1.42) and bind the PHP server to 0.0.0.0.
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2/hangug-api/public/\"")
         }
         release {
             isMinifyEnabled = false
