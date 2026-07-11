@@ -20,3 +20,11 @@ data class Envelope<T>(
     val data: T? = null,
     val errors: JsonElement? = null,
 )
+
+/**
+ * Shorthand for endpoints whose body we don't need to parse — only
+ * success/failure matters. Used by favorites / watch-later / watched
+ * mutations: we don't read the returned engagement row on the client
+ * (we just want to know if the server accepted it).
+ */
+typealias EnvelopeRaw = Envelope<JsonElement>
