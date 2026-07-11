@@ -2,6 +2,7 @@ package com.appriyo.deulama.data.remote
 
 import com.appriyo.deulama.BuildConfig
 import com.appriyo.deulama.data.remote.api.AuthApi
+import com.appriyo.deulama.data.remote.api.DramaApi
 import com.appriyo.deulama.data.remote.api.HealthApi
 import com.appriyo.deulama.data.remote.interceptor.AuthInterceptor
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -60,4 +61,5 @@ val networkModule = module {
 
     single<HealthApi> { get<Retrofit>().create(HealthApi::class.java) }
     single<AuthApi> { get<Retrofit>().create(AuthApi::class.java) }
+    single<DramaApi> { get<Retrofit>().create(DramaApi::class.java) }
 }
