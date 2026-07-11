@@ -78,7 +78,7 @@ data/          → Retrofit services, DTOs, Room DAOs, repository implementation
 
 | React / Web                                       | Android equivalent                                                                                                                                                                                  |
 |---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AuthContext.jsx`                                 | `AuthRepository` + `SessionManager` (DataStore-backed) + `AuthViewModel` shared via Hilt singleton scope                                                                                            |
+| `AuthContext.jsx`                                 | `AuthRepository` + `SessionManager` (DataStore-backed) + `AuthViewModel` shared via koin singleton scope                                                                                            |
 | `DramaContext.jsx`                                | `DramaRepository` (catalog, favorites, watch-later, watched, swipes) — exposed per-screen via ViewModels, not one giant context                                                                     |
 | `src/api/client.js` (Axios interceptors, 401 bus) | OkHttp `Authenticator`/`Interceptor` that attaches `Authorization: Bearer <jwt>` and a global `AuthEventBus` (`SharedFlow<AuthEvent.SessionExpired>`) that any screen can collect to force logout   |
 | `src/api/*.js` per-resource modules               | Retrofit service interfaces: `AuthApi`, `DramaApi`, `FavoritesApi`, `WatchLaterApi`, `WatchedApi`, `SwipeApi`, `ProfileApi`, `RecommendationsApi`, `HealthApi`                                      |
@@ -105,7 +105,7 @@ RecommendationsRepository → topTen(): Flow<RecommendationResult>
 ```
 app/
 ├── src/main/kotlin/com/yourorg/hangugdeulama/
-│   ├── HangugDeulamaApp.kt              # @HiltAndroidApp
+│   ├── HangugDeulamaApp.kt              # @koinAndroidApp
 │   ├── MainActivity.kt                  # single-activity host
 │   │
 │   ├── data/
@@ -113,7 +113,7 @@ app/
 │   │   │   ├── api/                     # AuthApi, DramaApi, SwipeApi, ...
 │   │   │   ├── dto/                     # DramaDto, EnvelopeDto<T>, ErrorDto...
 │   │   │   ├── interceptor/             # AuthInterceptor, ErrorInterceptor
-│   │   │   └── NetworkModule.kt         # Hilt @Provides Retrofit/OkHttp
+│   │   │   └── NetworkModule.kt         # koin @Provides Retrofit/OkHttp
 │   │   ├── local/
 │   │   │   ├── db/                      # Room database, DAOs, entities
 │   │   │   ├── datastore/               # SessionManager, AnonPrefsManager
@@ -139,7 +139,7 @@ app/
 │   │   ├── profile/                     # ProfileScreen, EditProfileSheet
 │   │   └── common/                      # LoadingState, ErrorState, EmptyState composables
 │   │
-│   └── di/                              # Hilt modules
+│   └── di/                              # koin modules
 │
 ├── build.gradle.kts
 └── gradle/libs.versions.toml
@@ -575,7 +575,7 @@ android {
 
 Mirrors the web project's own phased plan (§17 in your PROJECT.md) so both teams/timelines can reference the same milestones:
 
-1. **Project scaffolding** — Gradle setup, Hilt, Navigation graph skeleton, theme tokens (§10) fully ported first, before any real screens — get the design system right early so every subsequent screen just consumes it.
+1. **Project scaffolding** — Gradle setup, koin, Navigation graph skeleton, theme tokens (§10) fully ported first, before any real screens — get the design system right early so every subsequent screen just consumes it.
 2. **Networking + Auth** — Retrofit services, envelope parsing, `AuthRepository`, Login/Register screens, session persistence, global 401 handling.
 3. **Catalog + Details** — `DramaRepository`, Paging 3 catalog, Home + Discover (list view first, no swipe yet), Drama Details screen.
 4. **Swipe Deck** — the core gesture system (§9), wired to `POST /api/swipe`.
