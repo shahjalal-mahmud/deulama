@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DEBUG ONLY. Allows cleartext (http://) traffic to the emulator's
+  host-loopback alias so Retrofit can hit a local XAMPP/Laragon PHP
+  server without HTTPS during development.
+
+  If you're testing on a physical device against your machine's LAN IP
+  instead of the emulator, add another <domain> entry here with that IP.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>
