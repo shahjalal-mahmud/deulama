@@ -28,7 +28,7 @@ android {
             // to match wherever your PHP project actually lives under your local
             // server root (XAMPP/Laragon htdocs, etc).
             // Physical device on same Wi-Fi? swap 10.0.2.2 for your machine's LAN IP.
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2/hangug-api/public/\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1/hangug-api/public/\"")
         }
         release {
             isMinifyEnabled = false

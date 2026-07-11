@@ -2,13 +2,13 @@ package com.appriyo.deulama.data.remote
 
 import com.appriyo.deulama.BuildConfig
 import com.appriyo.deulama.data.remote.api.HealthApi
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
 import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 private val hangugJson = Json {
     ignoreUnknownKeys = true
