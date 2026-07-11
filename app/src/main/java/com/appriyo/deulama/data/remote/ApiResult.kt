@@ -92,6 +92,57 @@ suspend fun <T> safeApiCall(
 }
 
 /**
+ * Same as [safeApiCall] but for endpoints whose response body the
+ * caller doesn't actually need — only the success/failure decision.
+ * Used by favorites / watch-later / watched mutations where we'd
+ * otherwise have to thread a phantom `JsonElement` through the
+ * repository just to throw it away.
+ *
+ * Like [safeApiCall], `200` and `201` are both treated as Success
+ * (the API normalises everything via the envelope's `success` flag).
+ */
+suspend fun safeApiCallRaw(
+    json: Json,
+    block: suspend () -> Envelope<JsonElement>,
+): ApiResult<Unit> = safeApiCall<JsonElement>(json, block).mapToUnit()
+
+/** Functor map for [ApiResult]. Passes the value through `transform` on Success. */
+inline fun <T, R> ApiResult<T>.map(transform: (T) -> R): ApiResult<R> = when (this) {
+    is ApiResult.Success -> ApiResult.Success(transform(value))
+    is ApiResult.ValidationError -> this
+    is ApiResult.Error -> this
+    is ApiResult.NetworkError -> this
+}
+
+/**
+ * Discard the success value. Exists so call sites read as
+ * `safeApiCallRaw(json) { ... }` without having to `.let { ... }`.
+ */
+private fun <T> ApiResult<T>.mapToUnit(): ApiResult<Unit> = when (this) {
+    is ApiResult.Success -> ApiResult.Success(Unit)
+    is ApiResult.ValidationError -> this
+    is ApiResult.Error -> this
+    is ApiResult.NetworkError -> this
+}
+
+/**
+ * Collapse 409 / 404 responses into Success — the desired state is
+ * already true, so a double-tap shouldn't surface an error toast.
+ * Anything else passes through unchanged.
+ */
+fun ApiResult<Unit>.treatAlreadyAppliedAsSuccess(): ApiResult<Unit> = when (this) {
+    is ApiResult.Error -> if (httpStatus == 409 || httpStatus == 404) {
+        ApiResult.Success(Unit)
+    } else {
+        this
+    }
+    else -> this
+}
+
+/** The minimum drama id accepted by any endpoint. */
+internal const val MIN_DRAMA_ID = 1
+
+/**
  * The API returns validation errors as
  *   { "email": ["Email must be valid."], "password": ["Too short."] }
  * i.e. a JSON object whose values are arrays of strings. Some keys
