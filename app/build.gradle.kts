@@ -30,7 +30,7 @@ android {
             // your PHP project actually lives under your local server root.
             // Physical device on same Wi-Fi? swap 10.0.2.2 for your machine's
             // LAN IP (e.g. 192.168.1.42) and bind the PHP server to 0.0.0.0.
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2/hangug-api/public/\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.104/hangug-api/public/\"")
         }
         release {
             isMinifyEnabled = false
