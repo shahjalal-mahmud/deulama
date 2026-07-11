@@ -57,7 +57,7 @@ covers the Android app specifically.
 | Local storage | Room (offline queue / anonymous-mode sync) + Jetpack DataStore                     |
 | Pagination    | Paging 3                                                                           |
 | Images        | Coil3                                                                              |
-| Backend       | Vanilla PHP 8 REST API, MySQL, JWT (HS256) auth — see [`docs/api.md`](docs/api.md) |
+| Backend       | Vanilla PHP 8 REST API, MySQL, JWT (HS256) auth — see [`docs/api.md`](docs/API.md) |
 
 ---
 
@@ -165,7 +165,7 @@ app/src/main/kotlin/com/appriyo/deulama/
 ## 🔌 Backend API
 
 This app is a pure client against a documented REST API — see
-[`docs/api.md`](docs/api.md) for the full 19-endpoint reference
+[`docs/api.md`](docs/API.md) for the full 19-endpoint reference
 (request/response samples, error codes, JWT auth flow, cURL examples).
 Both this Android app and the companion React web app consume the exact
 same contract; if you change one client's expectations, check the other.
