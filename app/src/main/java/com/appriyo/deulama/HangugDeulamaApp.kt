@@ -1,12 +1,20 @@
 package com.appriyo.deulama
 
 import android.app.Application
+import com.appriyo.deulama.data.local.datastore.SessionManager
 import com.appriyo.deulama.di.appModules
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 
 class HangugDeulamaApp : Application() {
+
+    // App-scope used to prime the SessionManager cache off the main thread.
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
@@ -16,5 +24,7 @@ class HangugDeulamaApp : Application() {
             androidContext(this@HangugDeulamaApp)
             modules(appModules)
         }
+
+        get<SessionManager>().prime(appScope)
     }
 }
