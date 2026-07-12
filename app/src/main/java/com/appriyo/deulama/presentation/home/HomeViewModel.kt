@@ -2,6 +2,8 @@ package com.appriyo.deulama.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.appriyo.deulama.data.remote.ApiResult
 import com.appriyo.deulama.data.remote.api.HealthApi
 import com.appriyo.deulama.domain.model.Drama
@@ -11,6 +13,7 @@ import com.appriyo.deulama.domain.repository.DramaRepository
 import com.appriyo.deulama.domain.repository.DramaSort
 import com.appriyo.deulama.domain.repository.SortOrder
 import com.appriyo.deulama.presentation.components.ConnectionStatus
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,9 +68,6 @@ data class HomeUiState(
     val recommendationsLoading: Boolean = true,
 
     val genreSections: List<GenreSection> = GENRE_SECTIONS_SEED,
-
-    val allDramaPreview: List<Drama> = emptyList(),
-    val allDramaLoading: Boolean = true,
 )
 
 class HomeViewModel(
@@ -78,6 +78,21 @@ class HomeViewModel(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    /**
+     * Paged, newest-first catalog used by the home screen's "All Dramas"
+     * section. Driven by [DramaRepository.pagedCatalog] (which talks to
+     * `GET /api/dramas` via `DramaPagingSource`) and `cachedIn`-ed so the
+     * scroll position survives configuration changes and tab switches.
+     *
+     * Lives on the VM (not in [HomeUiState]) because Paging 3 owns its
+     * own snapshot / load-state machine — trying to mirror it into a
+     * generic UiState would either drop scroll fidelity or race the
+     * paging internals.
+     */
+    val allDrama: Flow<PagingData<Drama>> = dramaRepository
+        .pagedCatalog(sort = DramaSort.CREATED_AT, order = SortOrder.DESC)
+        .cachedIn(viewModelScope)
 
     init {
         viewModelScope.launch {
@@ -97,7 +112,8 @@ class HomeViewModel(
         loadTrending(genre = _uiState.value.selectedGenre)
         loadRecommendations()
         loadGenreSections()
-        loadAllDramaPreview()
+        // The paged "All Dramas" stream is started by [allDrama]'s
+        // collector in the screen — nothing to do here.
     }
 
     fun onSelectGenre(genre: String?) {
@@ -186,19 +202,6 @@ class HomeViewModel(
                 )
             }
             _uiState.update { it.copy(genreSections = filled) }
-        }
-    }
-
-    private fun loadAllDramaPreview() {
-        _uiState.update { it.copy(allDramaLoading = true) }
-        viewModelScope.launch {
-            val result = dramaRepository.listDramas(limit = 10, sort = DramaSort.CREATED_AT, order = SortOrder.DESC)
-            _uiState.update {
-                it.copy(
-                    allDramaPreview = (result as? ApiResult.Success)?.value.orEmpty(),
-                    allDramaLoading = false,
-                )
-            }
         }
     }
 
