@@ -8,6 +8,7 @@ import com.appriyo.deulama.data.mapper.toDomain
 import com.appriyo.deulama.data.remote.ApiResult
 import com.appriyo.deulama.data.remote.api.DramaApi
 import com.appriyo.deulama.data.remote.dto.DramaListDto
+import com.appriyo.deulama.data.remote.map
 import com.appriyo.deulama.data.remote.safeApiCall
 import com.appriyo.deulama.domain.model.Drama
 import com.appriyo.deulama.domain.repository.DramaRepository
@@ -49,6 +50,21 @@ class DramaRepositoryImpl(
         },
     ).flow
 
+    override suspend fun listDramas(
+        limit: Int,
+        sort: DramaSort,
+        order: SortOrder,
+        genre: String?,
+    ): ApiResult<List<Drama>> = safeApiCall(json) {
+        dramaApi.listDramas(
+            page = 1,  // Always fetch first page for fixed-shelf displays
+            limit = limit.coerceIn(1, MAX_LIMIT),
+            sort = sort.wire,
+            order = order.wire,
+            genre = genre,
+        )
+    }.map { dto -> dto.dramas.map { drama -> drama.toDomain() } }
+
     override suspend fun dramaDetails(id: Int): ApiResult<Drama> {
         if (id < MIN_DRAMA_ID) {
             // Per api.md, id must be >= 1. Return a typed validation
@@ -76,6 +92,9 @@ class DramaRepositoryImpl(
 
         /** How many items before the end we pre-fetch the next page. */
         private const val PREFETCH_DISTANCE = 6
+
+        /** Max limit per API spec. Used to clamp listDramas requests. */
+        private const val MAX_LIMIT = 100
 
         /** Floor enforced by api.md on the `id` path parameter. */
         private const val MIN_DRAMA_ID = 1
@@ -105,6 +124,7 @@ internal class DramaPagingSource(
                     limit = limit,
                     sort = sort.wire,
                     order = order.wire,
+                    genre = null,
                 )
             }
         ) {

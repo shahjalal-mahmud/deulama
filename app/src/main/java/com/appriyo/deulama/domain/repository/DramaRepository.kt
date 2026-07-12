@@ -5,38 +5,32 @@ import com.appriyo.deulama.data.remote.ApiResult
 import com.appriyo.deulama.domain.model.Drama
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Catalog + details operations the presentation layer is allowed to
- * call. All endpoints are public per api.md so no auth is involved —
- * this stays a thin wrapper over [com.appriyo.deulama.data.remote.api.DramaApi].
- */
 interface DramaRepository {
 
-    /**
-     * Paginated catalog sorted by [sort] in [order]. Returns a cold
-     * `Flow<PagingData<Drama>>` so the Paging 3 Compose extension can
-     * drive a `LazyColumn` / `LazyVerticalGrid` with built-in
-     * scroll-to-load-more.
-     */
     fun pagedCatalog(
         sort: DramaSort = DramaSort.CREATED_AT,
         order: SortOrder = SortOrder.DESC,
     ): Flow<PagingData<Drama>>
 
     /**
-     * GET /api/dramas/{id}. Returns [ApiResult.Success] with the
-     * drama, or a typed failure the UI layer renders as an error
-     * state (ValidationError / Error / NetworkError).
+     * Single-shot, non-paged fetch capped at [limit] — for homepage
+     * rails (spotlight, trending, per-genre, "all dramas" preview)
+     * where we want a fixed shelf, not infinite scroll. Mirrors the
+     * web's `dramasApi.listDramas({ limit, sort, order, genre })`.
+     *
+     * [genre] is matched server-side against the drama's genre list;
+     * pass null for no filter.
      */
+    suspend fun listDramas(
+        limit: Int,
+        sort: DramaSort = DramaSort.IMDB_RATING,
+        order: SortOrder = SortOrder.DESC,
+        genre: String? = null,
+    ): ApiResult<List<Drama>>
+
     suspend fun dramaDetails(id: Int): ApiResult<Drama>
 }
 
-/**
- * Hardcoded whitelist of the four columns the API accepts for the
- * `sort` query parameter. Anything else returns 422 from the server,
- * so exposing this as an enum keeps callers from sending free-text
- * values by accident.
- */
 enum class DramaSort(val wire: String) {
     TITLE("title"),
     RELEASE_YEAR("release_year"),
@@ -44,7 +38,6 @@ enum class DramaSort(val wire: String) {
     CREATED_AT("created_at"),
 }
 
-/** Hardcoded whitelist of the two values the API accepts for `order`. */
 enum class SortOrder(val wire: String) {
     ASC("asc"),
     DESC("desc"),
