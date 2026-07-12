@@ -5,9 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.appriyo.deulama.data.remote.ApiResult
 import com.appriyo.deulama.domain.model.Drama
 import com.appriyo.deulama.domain.repository.DramaRepository
+import com.appriyo.deulama.domain.repository.FavoritesRepository
+import com.appriyo.deulama.domain.repository.WatchLaterRepository
+import com.appriyo.deulama.domain.repository.WatchedRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -30,12 +37,29 @@ sealed interface DramaDetailsUiState {
     data class Error(val message: String) : DramaDetailsUiState
 }
 
+/**
+ * One-shot events the screen surfaces as snackbars. Kept separate
+ * from [DramaDetailsUiState] so the message doesn't re-show on every
+ * recomposition.
+ */
+sealed interface DramaDetailsEvent {
+    data class Info(val message: String) : DramaDetailsEvent
+}
+
 class DramaDetailsViewModel(
     private val dramaRepository: DramaRepository,
+    private val favoritesRepository: FavoritesRepository,
+    private val watchLaterRepository: WatchLaterRepository,
+    private val watchedRepository: WatchedRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<DramaDetailsUiState>(DramaDetailsUiState.Loading)
     val state: StateFlow<DramaDetailsUiState> = _state.asStateFlow()
+
+    private val _events = MutableSharedFlow<DramaDetailsEvent>(
+        extraBufferCapacity = 4,
+    )
+    val events: SharedFlow<DramaDetailsEvent> = _events.asSharedFlow()
 
     /** Tracks the last id so [retry] can re-fetch without re-pushing args. */
     private var currentId: Int = 0
@@ -79,6 +103,53 @@ class DramaDetailsViewModel(
                 }
             }
         }
+    }
+
+    // ---- Engagement actions (wired to the bottom action bar) ----
+
+    fun toggleFavorite() = runForCurrent { dramaId ->
+        val currentlyFav = favoritesRepository.isFavorited(dramaId).first()
+        val result = if (currentlyFav) {
+            favoritesRepository.remove(dramaId)
+        } else {
+            favoritesRepository.add(dramaId)
+        }
+        if (result is ApiResult.Success) {
+            _events.tryEmit(
+                DramaDetailsEvent.Info(
+                    if (currentlyFav) "Removed from favorites" else "Added to favorites"
+                ),
+            )
+        }
+    }
+
+    fun toggleWatchLater() = runForCurrent { dramaId ->
+        val currentlyQueued = watchLaterRepository.isQueued(dramaId).first()
+        val result = if (currentlyQueued) {
+            watchLaterRepository.remove(dramaId)
+        } else {
+            watchLaterRepository.add(dramaId)
+        }
+        if (result is ApiResult.Success) {
+            _events.tryEmit(
+                DramaDetailsEvent.Info(
+                    if (currentlyQueued) "Removed from watch later" else "Added to watch later"
+                ),
+            )
+        }
+    }
+
+    fun markWatched() = runForCurrent { dramaId ->
+        val result = watchedRepository.markWatched(dramaId)
+        if (result is ApiResult.Success) {
+            _events.tryEmit(DramaDetailsEvent.Info("Marked as watched"))
+        }
+    }
+
+    private fun runForCurrent(block: suspend (Int) -> Unit) {
+        val id = currentId
+        if (id < MIN_ID) return
+        viewModelScope.launch { block(id) }
     }
 
     companion object {
