@@ -2,6 +2,7 @@ package com.appriyo.deulama
 
 import android.app.Application
 import com.appriyo.deulama.data.local.datastore.SessionManager
+import com.appriyo.deulama.data.repository.EngagementSyncService
 import com.appriyo.deulama.di.appModules
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,5 +27,11 @@ class HangugDeulamaApp : Application() {
         }
 
         get<SessionManager>().prime(appScope)
+
+        // Phase-4: kick the anon → server sync observer. It subscribes
+        // to SessionManager.sessionFlow and replays queued engagement
+        // rows once a non-null session appears (i.e. registration or
+        // login completes).
+        get<EngagementSyncService>().start()
     }
 }
