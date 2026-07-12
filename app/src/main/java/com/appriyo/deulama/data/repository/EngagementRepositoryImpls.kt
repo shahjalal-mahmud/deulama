@@ -7,14 +7,18 @@ import com.appriyo.deulama.data.local.db.entity.LocalFavoriteEntity
 import com.appriyo.deulama.data.local.db.entity.LocalWatchLaterEntity
 import com.appriyo.deulama.data.local.db.entity.LocalWatchedEntity
 import com.appriyo.deulama.data.local.datastore.SessionManager
+import com.appriyo.deulama.data.mapper.toDomain
 import com.appriyo.deulama.data.remote.ApiResult
 import com.appriyo.deulama.data.remote.MIN_DRAMA_ID
 import com.appriyo.deulama.data.remote.api.FavoritesApi
 import com.appriyo.deulama.data.remote.api.WatchLaterApi
 import com.appriyo.deulama.data.remote.api.WatchedApi
+import com.appriyo.deulama.data.remote.dto.EngagementListItemDto
 import com.appriyo.deulama.data.remote.dto.EngagementRequestDto
+import com.appriyo.deulama.data.remote.safeApiCall
 import com.appriyo.deulama.data.remote.safeApiCallRaw
 import com.appriyo.deulama.data.remote.treatAlreadyAppliedAsSuccess
+import com.appriyo.deulama.domain.model.EngagementEntry
 import com.appriyo.deulama.domain.repository.FavoritesRepository
 import com.appriyo.deulama.domain.repository.WatchLaterRepository
 import com.appriyo.deulama.domain.repository.WatchedRepository
@@ -135,6 +139,16 @@ class FavoritesRepositoryImpl(
 
     override fun isFavorited(dramaId: Int): Flow<Boolean> =
         localDao.isFavoritedFlow(dramaId)
+
+    override suspend fun listFavorites(): ApiResult<List<EngagementEntry>> =
+        when (val result = safeApiCall(json) { api.list() }) {
+            is ApiResult.Success -> ApiResult.Success(
+                result.value.favorites.mapNotNull { it.toFavoriteEntry() },
+            )
+            is ApiResult.ValidationError -> result
+            is ApiResult.Error -> result
+            is ApiResult.NetworkError -> result
+        }
 }
 
 class WatchLaterRepositoryImpl(
@@ -197,6 +211,16 @@ class WatchLaterRepositoryImpl(
 
     override fun isQueued(dramaId: Int): Flow<Boolean> =
         localDao.isQueuedFlow(dramaId)
+
+    override suspend fun listWatchLater(): ApiResult<List<EngagementEntry>> =
+        when (val result = safeApiCall(json) { api.list() }) {
+            is ApiResult.Success -> ApiResult.Success(
+                result.value.watch_later.mapNotNull { it.toWatchLaterEntry() },
+            )
+            is ApiResult.ValidationError -> result
+            is ApiResult.Error -> result
+            is ApiResult.NetworkError -> result
+        }
 }
 
 class WatchedRepositoryImpl(
@@ -236,6 +260,16 @@ class WatchedRepositoryImpl(
 
     override fun isMarkedWatched(dramaId: Int): Flow<Boolean> =
         localDao.isMarkedWatchedFlow(dramaId)
+
+    override suspend fun listWatched(): ApiResult<List<EngagementEntry>> =
+        when (val result = safeApiCall(json) { api.list() }) {
+            is ApiResult.Success -> ApiResult.Success(
+                result.value.watched.mapNotNull { it.toWatchedEntry() },
+            )
+            is ApiResult.ValidationError -> result
+            is ApiResult.Error -> result
+            is ApiResult.NetworkError -> result
+        }
 }
 
 /** Convert any non-success ApiResult into a user-facing snackbar message. */
@@ -245,4 +279,44 @@ internal fun messageFor(result: ApiResult<*>): String = when (result) {
     is ApiResult.NetworkError -> "Can't reach the server. We'll save this for next time."
     is ApiResult.Error -> result.message.ifBlank { "Couldn't save that action." }
     is ApiResult.Success -> "" // unreachable
+}
+
+// ---- Phase 7 list helpers -----------------------------------------------
+//
+// Each list endpoint returns rows where the embedded `drama` object
+// may be missing on older server payloads. We drop rows without a
+// drama — the timeline UI cannot render an entry without metadata.
+
+/**
+ * Map a `favorites`/`watch_later` list-item DTO into a domain
+ * [EngagementEntry]. Drops rows whose embedded `drama` is null so the
+ * UI never has to handle a half-rendered row.
+ */
+private fun EngagementListItemDto.toFavoriteEntry(): EngagementEntry? {
+    val d = drama?.toDomain() ?: return null
+    return EngagementEntry(
+        kind = EngagementEntry.Kind.FAVORITED,
+        drama = d,
+        timestamp = created_at.orEmpty(),
+    )
+}
+
+private fun EngagementListItemDto.toWatchLaterEntry(): EngagementEntry? {
+    val d = drama?.toDomain() ?: return null
+    return EngagementEntry(
+        kind = EngagementEntry.Kind.WATCH_LATER,
+        drama = d,
+        timestamp = created_at.orEmpty(),
+    )
+}
+
+/** Watched rows use `watched_at` instead of `created_at`. */
+private fun EngagementListItemDto.toWatchedEntry(): EngagementEntry? {
+    val d = drama?.toDomain() ?: return null
+    val ts = watched_at ?: created_at.orEmpty()
+    return EngagementEntry(
+        kind = EngagementEntry.Kind.WATCHED,
+        drama = d,
+        timestamp = ts,
+    )
 }

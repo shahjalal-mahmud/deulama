@@ -14,6 +14,7 @@ import com.appriyo.deulama.data.repository.NoOpFailureBus
 import com.appriyo.deulama.data.repository.ProfileRepositoryImpl
 import com.appriyo.deulama.data.repository.RecommendationsRepositoryImpl
 import com.appriyo.deulama.data.repository.SwipeRepositoryImpl
+import com.appriyo.deulama.data.repository.TimelineRepositoryImpl
 import com.appriyo.deulama.data.repository.WatchLaterRepositoryImpl
 import com.appriyo.deulama.data.repository.WatchedRepositoryImpl
 import com.appriyo.deulama.domain.repository.AuthRepository
@@ -23,8 +24,10 @@ import com.appriyo.deulama.domain.repository.GenreStatsRepository
 import com.appriyo.deulama.domain.repository.ProfileRepository
 import com.appriyo.deulama.domain.repository.RecommendationsRepository
 import com.appriyo.deulama.domain.repository.SwipeRepository
+import com.appriyo.deulama.domain.repository.TimelineRepository
 import com.appriyo.deulama.domain.repository.WatchLaterRepository
 import com.appriyo.deulama.domain.repository.WatchedRepository
+import com.appriyo.deulama.presentation.activity.ActivityViewModel
 import com.appriyo.deulama.presentation.auth.AuthViewModel
 import com.appriyo.deulama.presentation.details.DramaDetailsViewModel
 import com.appriyo.deulama.presentation.discover.DiscoverViewModel
@@ -75,6 +78,9 @@ private val appOnlyModule = module {
     single<ProfileRepository> {
         ProfileRepositoryImpl(get(), get(), get())
     }
+    single<TimelineRepository> {
+        TimelineRepositoryImpl(get(), get(), get())
+    }
 
     // Phase-4 sync-on-login — wired to start() from HangugDeulamaApp.
     single {
@@ -101,6 +107,7 @@ private val appOnlyModule = module {
     viewModel { RecommendationsViewModel(get(), get(), get()) }
     viewModel { GenreStatsViewModel(get(), get()) }
     viewModel { EditProfileViewModel(get(), get()) }
+    viewModel { ActivityViewModel(get(), get()) }
 }
 
 val appModules = listOf(
