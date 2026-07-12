@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +28,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun ProfileScreen(
     onOpenEditProfile: () -> Unit,
+    onOpenGenreStats: () -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel = koinViewModel(),
 ) {
@@ -69,9 +72,19 @@ fun ProfileScreen(
 
             Button(
                 onClick = onOpenEditProfile,
-                modifier = Modifier.padding(bottom = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
             ) {
                 Text("Edit Profile")
+            }
+            OutlinedButton(
+                onClick = onOpenGenreStats,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+            ) {
+                Text("Genre breakdown", color = HangugColors.Secondary)
             }
             TextButton(onClick = onLogout) {
                 Text("Log out", color = HangugColors.Danger)
