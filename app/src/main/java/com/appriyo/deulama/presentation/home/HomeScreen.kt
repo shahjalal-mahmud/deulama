@@ -1,45 +1,27 @@
 package com.appriyo.deulama.presentation.home
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.background
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.compose.collectAsLazyPagingItems
-import com.appriyo.deulama.presentation.components.DramaCard
-import com.appriyo.deulama.presentation.components.DramaCardVariant
-import com.appriyo.deulama.presentation.components.StatusBanner
+import com.appriyo.deulama.domain.model.Drama
+import com.appriyo.deulama.presentation.components.GenreChip
 import com.appriyo.deulama.ui.theme.HangugColors
 import org.koin.androidx.compose.koinViewModel
 
-/**
- * Home tab. Reads from:
- *  - session (greeting)
- *  - health-check (status banner)
- *  - catalog (Trending now rail — IMDB rating DESC)
- *
- * Continue Watching row is intentionally a static placeholder until
- * Phase 4. Trending rail is paginated horizontally via Paging 3.
- */
 @Composable
 fun HomeScreen(
     onOpenDiscover: () -> Unit,
@@ -47,138 +29,85 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val trending = viewModel.trendingPaging.collectAsLazyPagingItems()
+    val goToDetails: (Drama) -> Unit = { onOpenDramaDetails(it.dramaId) }
 
-    Scaffold { innerPadding ->
+    Scaffold(containerColor = HangugColors.BgBase) { innerPadding ->
+        val layoutDirection = LocalLayoutDirection.current
+
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = 0.dp,
+                bottom = innerPadding.calculateBottomPadding() + 32.dp,
+                start = innerPadding.calculateStartPadding(layoutDirection),
+                end = innerPadding.calculateEndPadding(layoutDirection),
+            ),
         ) {
+            // Hero bleeds under the status bar — no top inset padding,
+            // matching the web's "navbar floats over hero" treatment.
             item {
-                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    Text(
-                        text = "지금 인기 · TRENDING NOW",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = HangugColors.Secondary,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "Home",
-                        style = MaterialTheme.typography.displayLarge,
-                        color = HangugColors.TextPrimary,
-                    )
-                    val greeting = uiState.user?.fullName
-                    if (greeting != null) {
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text = "안녕하세요 · Hi, $greeting",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = HangugColors.TextSecondary,
-                        )
-                    }
-                }
-            }
-
-            item {
-                StatusBanner(
-                    status = uiState.status,
-                    message = uiState.message,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
+                HeroSpotlight(
+                    items = uiState.spotlight,
+                    loading = uiState.spotlightLoading,
+                    onDramaClick = goToDetails,
                 )
             }
 
-            // ---- TRENDING NOW rail ---------------------------------
-            item { SectionHeader(label = "Trending now") }
+            // Genre filter pills — drive Trending Now below.
             item {
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
                 ) {
-                    if (trending.itemCount == 0) {
-                        // Empty-state copy right-aligned inside the row.
-                        item {
-                            Text(
-                                text = "Loading…",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = HangugColors.TextTertiary,
-                                modifier = Modifier.padding(vertical = 60.dp),
-                            )
-                        }
-                    } else {
-                        items(
-                            count = trending.itemCount,
-                            key = { idx -> trending.peek(idx)?.dramaId ?: idx },
-                        ) { idx ->
-                            val drama = trending[idx]
-                            if (drama != null) {
-                                DramaCard(
-                                    drama = drama,
-                                    onClick = { onOpenDramaDetails(drama.dramaId) },
-                                    variant = DramaCardVariant.LANDSCAPE,
-                                )
-                            }
-                        }
+                    item {
+                        GenreChip(
+                            label = "All",
+                            selected = uiState.selectedGenre == null,
+                            onClick = { viewModel.onSelectGenre(null) },
+                        )
+                    }
+                    items(HOME_GENRE_FILTERS) { genre ->
+                        GenreChip(
+                            label = genre,
+                            selected = uiState.selectedGenre == genre,
+                            onClick = { viewModel.onSelectGenre(genre) },
+                        )
                     }
                 }
+                Spacer(Modifier.height(24.dp))
             }
 
-            // ---- CONTINUE WATCHING (static until Phase 4) ----------
-            item { SectionHeader(label = "Continue watching") }
+            // 1. Trending Now
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .height(140.dp)
-                        .background(
-                            color = HangugColors.SurfaceContainer,
-                            shape = MaterialTheme.shapes.large,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(HangugColors.Primary, CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                "▶",
-                                color = HangugColors.OnPrimary,
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "Nothing here yet",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = HangugColors.TextSecondary,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Text(
-                            text = "Pick up where you left off — coming in Phase 4",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = HangugColors.TextTertiary,
-                        )
-                    }
-                }
+                TrendingRail(items = uiState.trending, loading = uiState.trendingLoading, onDramaClick = goToDetails)
+                Spacer(Modifier.height(28.dp))
+            }
+
+            // 2. Top Picks For You
+            item {
+                RecommendationList(items = uiState.recommendations, loading = uiState.recommendationsLoading, onDramaClick = goToDetails)
+                Spacer(Modifier.height(28.dp))
+            }
+
+            // 3-9. Genre shelves
+            items(uiState.genreSections, key = { it.key }) { section ->
+                GenreRail(
+                    section = section,
+                    onDramaClick = goToDetails,
+                    onViewAll = { onOpenDiscover() },
+                )
+                Spacer(Modifier.height(28.dp))
+            }
+
+            // 10. All Dramas preview
+            item {
+                AllDramaPreview(
+                    items = uiState.allDramaPreview,
+                    loading = uiState.allDramaLoading,
+                    onDramaClick = goToDetails,
+                    onViewAll = onOpenDiscover,
+                )
             }
         }
     }
-}
-
-@Composable
-private fun SectionHeader(label: String) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.titleMedium,
-        color = HangugColors.TextPrimary,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(horizontal = 24.dp),
-    )
 }
