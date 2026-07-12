@@ -9,19 +9,30 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.appriyo.deulama.domain.repository.FavoritesRepository
+import com.appriyo.deulama.domain.repository.WatchLaterRepository
+import com.appriyo.deulama.domain.repository.WatchedRepository
 import com.appriyo.deulama.ui.theme.HangugColors
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import org.koin.compose.koinInject
 
 /**
  * Pill row of 5 action buttons that share the same "fly the card
@@ -32,13 +43,33 @@ import com.appriyo.deulama.ui.theme.HangugColors
  *   Dislike · Favorite · Skip · Watch Later · Watched · Like
  * (Dislike on the far left, Like on the far right — same direction
  *  language as the card itself.)
+ *
+ * `activeDramaId` is used to bind the Favorite / Watch Later / Watched
+ * buttons to the persisted Room state. Pass `null` to disable state
+ * binding (the buttons still fire actions but don't reflect server
+ * state).
  */
 @Composable
 fun DeckActionRow(
     onAction: (DeckAction) -> Unit,
+    activeDramaId: Int? = null,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    favoritesRepository: FavoritesRepository = koinInject(),
+    watchLaterRepository: WatchLaterRepository = koinInject(),
+    watchedRepository: WatchedRepository = koinInject(),
 ) {
+    val isFavFlow: Flow<Boolean> = activeDramaId?.let { favoritesRepository.isFavorited(it) }
+        ?: flowOf(false)
+    val isQueuedFlow: Flow<Boolean> = activeDramaId?.let { watchLaterRepository.isQueued(it) }
+        ?: flowOf(false)
+    val isWatchedFlow: Flow<Boolean> = activeDramaId?.let { watchedRepository.isMarkedWatched(it) }
+        ?: flowOf(false)
+
+    val isFav by isFavFlow.collectAsStateWithLifecycle(initialValue = false)
+    val isQueued by isQueuedFlow.collectAsStateWithLifecycle(initialValue = false)
+    val isWatched by isWatchedFlow.collectAsStateWithLifecycle(initialValue = false)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -55,10 +86,10 @@ fun DeckActionRow(
             enabled = enabled,
         )
         ActionCircle(
-            icon = Icons.Filled.Bookmark,
+            icon = if (isQueued) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
             tint = HangugColors.Secondary,
             background = HangugColors.SurfaceContainer,
-            contentDescription = "Watch later",
+            contentDescription = if (isQueued) "Remove from watch later" else "Watch later",
             onClick = { onAction(DeckAction.WatchLater) },
             enabled = enabled,
         )
@@ -74,18 +105,18 @@ fun DeckActionRow(
             size = 48.dp,
         )
         ActionCircle(
-            icon = Icons.Filled.Check,
-            tint = HangugColors.Secondary,
+            icon = if (isWatched) Icons.Filled.CheckCircle else Icons.Filled.Check,
+            tint = if (isWatched) HangugColors.Tertiary else HangugColors.Secondary,
             background = HangugColors.SurfaceContainer,
-            contentDescription = "Watched",
+            contentDescription = if (isWatched) "Already watched" else "Watched",
             onClick = { onAction(DeckAction.Watched) },
-            enabled = enabled,
+            enabled = enabled && !isWatched, // no un-watch affordance
         )
         ActionCircle(
-            icon = Icons.Filled.Favorite,
+            icon = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
             tint = HangugColors.Primary,
             background = HangugColors.SurfaceContainer,
-            contentDescription = "Favorite",
+            contentDescription = if (isFav) "Remove from favorites" else "Favorite",
             onClick = { onAction(DeckAction.Favorite) },
             enabled = enabled,
         )
