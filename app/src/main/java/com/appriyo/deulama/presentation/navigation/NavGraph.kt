@@ -39,6 +39,7 @@ import com.appriyo.deulama.presentation.auth.LoginScreen
 import com.appriyo.deulama.presentation.auth.RegisterScreen
 import com.appriyo.deulama.presentation.details.DramaDetailsScreen
 import com.appriyo.deulama.presentation.discover.DiscoverScreen
+import com.appriyo.deulama.presentation.genre.GenreStatsScreen
 import com.appriyo.deulama.presentation.home.HomeScreen
 import com.appriyo.deulama.presentation.profile.EditProfileScreen
 import com.appriyo.deulama.presentation.profile.ProfileScreen
@@ -138,7 +139,12 @@ private fun HangugNavGraphLoaded(
             }
             composable<HangugRoute.Recommendations> {
                 RecommendationsScreen(
-                    onOpenDramaDetails = { id -> navController.navigate(HangugRoute.DramaDetails(id)) },
+                    onOpenDramaDetails = { id, fromRecs ->
+                        navController.navigate(
+                            HangugRoute.DramaDetails(id = id, fromRecommendations = fromRecs),
+                        )
+                    },
+                    onGoToLogin = { navController.navigateToAuthGraph() },
                 )
             }
             composable<HangugRoute.Activity> {
@@ -149,6 +155,7 @@ private fun HangugNavGraphLoaded(
             composable<HangugRoute.Profile> {
                 ProfileScreen(
                     onOpenEditProfile = { navController.navigate(HangugRoute.EditProfile) },
+                    onOpenGenreStats = { navController.navigate(HangugRoute.GenreStats) },
                     onLogout = {
                         authViewModel.logout()
                         navController.navigateToAuthGraph()
@@ -161,12 +168,18 @@ private fun HangugNavGraphLoaded(
                 val args = entry.toRoute<HangugRoute.DramaDetails>()
                 DramaDetailsScreen(
                     dramaId = args.id,
+                    fromRecommendations = args.fromRecommendations,
                     onBack = { navController.popBackStack() },
                 )
             }
             composable<HangugRoute.EditProfile> {
                 EditProfileScreen(
                     onBack = { navController.popBackStack() },
+                )
+            }
+            composable<HangugRoute.GenreStats> {
+                GenreStatsScreen(
+                    onGoToLogin = { navController.navigateToAuthGraph() },
                 )
             }
         }

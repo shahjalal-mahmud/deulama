@@ -5,6 +5,8 @@ import com.appriyo.deulama.data.remote.api.AuthApi
 import com.appriyo.deulama.data.remote.api.DramaApi
 import com.appriyo.deulama.data.remote.api.FavoritesApi
 import com.appriyo.deulama.data.remote.api.HealthApi
+import com.appriyo.deulama.data.remote.api.ProfileStatsApi
+import com.appriyo.deulama.data.remote.api.RecommendationsApi
 import com.appriyo.deulama.data.remote.api.SwipeApi
 import com.appriyo.deulama.data.remote.api.WatchLaterApi
 import com.appriyo.deulama.data.remote.api.WatchedApi
@@ -70,4 +72,6 @@ val networkModule = module {
     single<FavoritesApi> { get<Retrofit>().create(FavoritesApi::class.java) }
     single<WatchLaterApi> { get<Retrofit>().create(WatchLaterApi::class.java) }
     single<WatchedApi> { get<Retrofit>().create(WatchedApi::class.java) }
+    single<RecommendationsApi> { get<Retrofit>().create(RecommendationsApi::class.java) }
+    single<ProfileStatsApi> { get<Retrofit>().create(ProfileStatsApi::class.java) }
 }

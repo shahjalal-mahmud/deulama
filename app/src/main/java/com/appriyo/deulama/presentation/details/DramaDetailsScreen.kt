@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.People
@@ -77,6 +78,7 @@ import org.koin.androidx.compose.koinViewModel
 fun DramaDetailsScreen(
     dramaId: Int,
     onBack: () -> Unit,
+    fromRecommendations: Boolean = false,
     viewModel: DramaDetailsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -145,6 +147,7 @@ fun DramaDetailsScreen(
             )
             is DramaDetailsUiState.Success -> DetailBody(
                 drama = s.drama,
+                fromRecommendations = fromRecommendations,
                 contentPadding = innerPadding,
             )
         }
@@ -156,6 +159,7 @@ fun DramaDetailsScreen(
 @Composable
 private fun DetailBody(
     drama: Drama,
+    fromRecommendations: Boolean,
     contentPadding: PaddingValues,
 ) {
     LazyColumn(
@@ -170,6 +174,10 @@ private fun DetailBody(
         item { Banner(drama) }
         item {
             Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+                if (fromRecommendations) {
+                    BecauseYouLikedItBanner()
+                    Spacer(Modifier.height(16.dp))
+                }
                 InfoGrid(drama)
                 Spacer(Modifier.height(20.dp))
                 if (drama.genres.isNotEmpty()) {
@@ -385,6 +393,34 @@ private fun FooterLine(drama: Drama) {
         style = MaterialTheme.typography.labelSmall,
         color = HangugColors.TextTertiary,
     )
+}
+
+/* --------------------------- BANNER: RECS ------------------------- */
+
+@Composable
+private fun BecauseYouLikedItBanner() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(HangugColors.PrimaryContainer.copy(alpha = 0.25f))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.AutoAwesome,
+            contentDescription = null,
+            tint = HangugColors.Primary,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = "Because you liked this kind of drama",
+            style = MaterialTheme.typography.titleSmall,
+            color = HangugColors.TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
 }
 
 /* --------------------------- TERMINAL UI -------------------------- */
