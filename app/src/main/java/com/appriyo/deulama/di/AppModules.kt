@@ -9,13 +9,17 @@ import com.appriyo.deulama.data.repository.DramaRepositoryImpl
 import com.appriyo.deulama.data.repository.EngagementFailureBus
 import com.appriyo.deulama.data.repository.EngagementSyncService
 import com.appriyo.deulama.data.repository.FavoritesRepositoryImpl
+import com.appriyo.deulama.data.repository.GenreStatsRepositoryImpl
 import com.appriyo.deulama.data.repository.NoOpFailureBus
+import com.appriyo.deulama.data.repository.RecommendationsRepositoryImpl
 import com.appriyo.deulama.data.repository.SwipeRepositoryImpl
 import com.appriyo.deulama.data.repository.WatchLaterRepositoryImpl
 import com.appriyo.deulama.data.repository.WatchedRepositoryImpl
 import com.appriyo.deulama.domain.repository.AuthRepository
 import com.appriyo.deulama.domain.repository.DramaRepository
 import com.appriyo.deulama.domain.repository.FavoritesRepository
+import com.appriyo.deulama.domain.repository.GenreStatsRepository
+import com.appriyo.deulama.domain.repository.RecommendationsRepository
 import com.appriyo.deulama.domain.repository.SwipeRepository
 import com.appriyo.deulama.domain.repository.WatchLaterRepository
 import com.appriyo.deulama.domain.repository.WatchedRepository
@@ -23,7 +27,9 @@ import com.appriyo.deulama.presentation.auth.AuthViewModel
 import com.appriyo.deulama.presentation.details.DramaDetailsViewModel
 import com.appriyo.deulama.presentation.discover.DiscoverViewModel
 import com.appriyo.deulama.presentation.discover.SwipeDeckViewModel
+import com.appriyo.deulama.presentation.genre.GenreStatsViewModel
 import com.appriyo.deulama.presentation.home.HomeViewModel
+import com.appriyo.deulama.presentation.recommendations.RecommendationsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -57,6 +63,12 @@ private val appOnlyModule = module {
     single<WatchedRepository> {
         WatchedRepositoryImpl(get(), get(), get(), get(), get())
     }
+    single<RecommendationsRepository> {
+        RecommendationsRepositoryImpl(get(), get())
+    }
+    single<GenreStatsRepository> {
+        GenreStatsRepositoryImpl(get(), get())
+    }
 
     // Phase-4 sync-on-login — wired to start() from HangugDeulamaApp.
     single {
@@ -80,6 +92,8 @@ private val appOnlyModule = module {
     viewModel { DiscoverViewModel(get()) }
     viewModel { SwipeDeckViewModel(get(), get(), get(), get()) }
     viewModel { DramaDetailsViewModel(get(), get(), get(), get()) }
+    viewModel { RecommendationsViewModel(get(), get(), get()) }
+    viewModel { GenreStatsViewModel(get(), get()) }
 }
 
 val appModules = listOf(
