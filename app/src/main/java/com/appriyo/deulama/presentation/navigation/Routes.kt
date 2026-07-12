@@ -29,10 +29,22 @@ sealed interface HangugRoute {
 
     // ---- Pushed routes (no bottom bar / dimmed) ----
     @Serializable
-    data class DramaDetails(val id: Int) : HangugRoute
+    data class DramaDetails(
+        val id: Int,
+        /**
+         * `true` when the user navigated here from the Recommendations
+         * tab. Lets the Details screen render a "Because you liked X"
+         * reasoning line. Defaults to `false` everywhere else.
+         */
+        val fromRecommendations: Boolean = false,
+    ) : HangugRoute
 
     @Serializable
     data object EditProfile : HangugRoute
+
+    /** Genre breakdown — opened from Profile or empty-states. */
+    @Serializable
+    data object GenreStats : HangugRoute
 }
 
 /** The five tabs shown in the bottom NavigationBar, in display order. */
