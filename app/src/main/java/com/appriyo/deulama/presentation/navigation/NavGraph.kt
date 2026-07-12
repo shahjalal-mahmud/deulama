@@ -150,6 +150,7 @@ private fun HangugNavGraphLoaded(
             composable<HangugRoute.Activity> {
                 ActivityScreen(
                     onGoToLogin = { navController.navigateToAuthGraph() },
+                    onOpenDramaDetails = { id -> navController.navigate(HangugRoute.DramaDetails(id)) },
                 )
             }
             composable<HangugRoute.Profile> {
