@@ -104,7 +104,7 @@ suspend fun <T> safeApiCall(
 suspend fun safeApiCallRaw(
     json: Json,
     block: suspend () -> Envelope<JsonElement>,
-): ApiResult<Unit> = safeApiCall<JsonElement>(json, block).mapToUnit()
+): ApiResult<Unit> = safeApiCall(json, block).mapToUnit()
 
 /** Functor map for [ApiResult]. Passes the value through `transform` on Success. */
 inline fun <T, R> ApiResult<T>.map(transform: (T) -> R): ApiResult<R> = when (this) {

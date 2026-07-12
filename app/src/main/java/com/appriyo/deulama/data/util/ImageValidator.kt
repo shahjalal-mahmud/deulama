@@ -59,13 +59,11 @@ object ImageValidator {
         }
 
         val sizeBytes = querySizeBytes(uri, contentResolver)
-        if (sizeBytes == null) {
-            // Some providers don't expose SIZE (rare, but happens). We
+            ?: // Some providers don't expose SIZE (rare, but happens). We
             // still let the request through and trust the server's
             // finfo_file() check — failing the upload here would be
             // a regression for users on those providers.
             return Result.Ok(mime = mime, sizeBytes = -1L)
-        }
         if (sizeBytes <= 0L) {
             return Result.Invalid("Image is empty.")
         }
