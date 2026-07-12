@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import java.io.ByteArrayOutputStream
+import androidx.core.graphics.scale
 
 /**
  * Best-effort client-side image compression for the
@@ -112,6 +113,6 @@ object ImageCompressor {
         val scale = MAX_EDGE_PX.toFloat() / longest.toFloat()
         val newW = (w * scale).toInt().coerceAtLeast(1)
         val newH = (h * scale).toInt().coerceAtLeast(1)
-        return Bitmap.createScaledBitmap(src, newW, newH, true)
+        return src.scale(newW, newH)
     }
 }

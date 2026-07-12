@@ -94,6 +94,29 @@ private fun HangugNavGraphLoaded(
         }
     }
 
+    // Auth gating happens here (via stable startDestination = Login + a
+    // redirect effect) rather than via a dynamic `startDestination`. A
+    // recomputed start destination in nav-compose 2.8 re-keys the NavHost
+    // and resets the back stack on every recomposition, which swallows
+    // anonymous-CTA navigations that don't flip the auth state.
+    LaunchedEffect(authState) {
+        if (authState is AuthUiState.SignedIn) {
+            // Only redirect if we're sitting on an auth route. If the
+            // user is already in the main graph (Profile, Discover,
+            // etc.), leave the back stack alone so configuration
+            // changes and tab switches aren't disrupted.
+            val currentRoute = navController.currentDestination
+                ?.hierarchy
+                ?.lastOrNull()
+                ?.route
+            val onAuthRoute = currentRoute == HangugRoute.Login::class.qualifiedName ||
+                currentRoute == HangugRoute.Register::class.qualifiedName
+            if (onAuthRoute) {
+                navController.navigateToMainGraph()
+            }
+        }
+    }
+
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
@@ -103,11 +126,7 @@ private fun HangugNavGraphLoaded(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = if (authState is AuthUiState.SignedIn) {
-                HangugRoute.Home
-            } else {
-                HangugRoute.Login
-            },
+            startDestination = HangugRoute.Login,
             modifier = Modifier.padding(innerPadding),
         ) {
             // ---- Auth graph ----

@@ -1,6 +1,5 @@
 package com.appriyo.deulama.presentation.auth
 
-import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.appriyo.deulama.data.remote.ApiResult
@@ -34,6 +33,20 @@ private object ApiFields {
 }
 
 private const val NETWORK_BANNER = "Can't reach the server. Check your connection."
+
+/**
+ * Banner shown when /api/auth/login rejects the credentials.
+ *
+ * Per API.md §"Security note" the backend returns the **same** message
+ * for "unknown email" and "wrong password" to defeat user enumeration.
+ * We pin the copy client-side too, so:
+ *  - the UI is enumeration-resistant regardless of server phrasing;
+ *  - if the server ever returns an HTTP 401 with a non-envelope body
+ *    (e.g. an empty 401 from a misconfigured proxy), we still surface
+ *    the correct user-facing message instead of a generic
+ *    "Request failed (HTTP 401)".
+ */
+private const val INVALID_CREDENTIALS_BANNER = "Invalid email or password."
 
 class AuthViewModel(
     private val authRepository: AuthRepository,
@@ -99,7 +112,17 @@ class AuthViewModel(
                         )
                     }
                 }
-                is ApiResult.Error -> _loginForm.update { it.copy(isSubmitting = false, banner = res.message) }
+                is ApiResult.Error -> _loginForm.update { state ->
+                    // HTTP 401 from /api/auth/login means "wrong credentials"
+                    // — pin the copy here so the UI is enumeration-resistant
+                    // even if the server's message field differs.
+                    val banner = if (res.httpStatus == 401) {
+                        INVALID_CREDENTIALS_BANNER
+                    } else {
+                        res.message
+                    }
+                    state.copy(isSubmitting = false, banner = banner)
+                }
                 is ApiResult.NetworkError -> _loginForm.update { it.copy(isSubmitting = false, banner = NETWORK_BANNER) }
             }
         }
@@ -226,9 +249,23 @@ private fun validateLoginPassword(pw: String): String? = when {
     else -> null
 }
 
+/**
+ * Email-shape check used by both the login and register forms.
+ *
+ * Extracted to a JVM regex so unit tests can exercise the validators
+ * without needing Android's `Patterns.EMAIL_ADDRESS` (which is null
+ * on the stock JVM, see SafeApiCall-style test setup). Mirrors
+ * android.util.Patterns.EMAIL_ADDRESS in spirit but is permissive on
+ * the local-part (no length cap, accepts `+`, `.`, `_`, `%`, `-`).
+ */
+private val emailPattern: java.util.regex.Pattern =
+    java.util.regex.Pattern.compile(
+        "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+    )
+
 private fun validateLoginEmail(email: String): String? = when {
     email.isBlank() -> "Enter your email."
-    !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> "Enter a valid email address."
+    !emailPattern.matcher(email.trim()).matches() -> "Enter a valid email address."
     else -> null
 }
 
@@ -241,7 +278,7 @@ private fun validateRegisterName(name: String): String? = when {
 private fun validateRegisterEmail(email: String): String? = when {
     email.isBlank() -> "Enter your email."
     email.length > 191 -> "Email must be 191 characters or fewer."
-    !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> "Enter a valid email address."
+    !emailPattern.matcher(email.trim()).matches() -> "Enter a valid email address."
     else -> null
 }
 
