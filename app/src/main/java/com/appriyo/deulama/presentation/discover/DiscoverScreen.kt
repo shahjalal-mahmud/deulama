@@ -139,6 +139,7 @@ fun DiscoverScreen(
                         activeIndex += 1
                     }
                 },
+                activeDramaId = activeDrama?.dramaId,
                 enabled = activeDrama != null && !deckViewModel.state.collectAsState().value.isAnimating,
             )
 
