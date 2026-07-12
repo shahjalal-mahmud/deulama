@@ -29,6 +29,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -36,6 +39,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,9 +51,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.appriyo.deulama.domain.model.Drama
+import com.appriyo.deulama.presentation.components.DramaEngagementActions
 import com.appriyo.deulama.ui.theme.HangugBrandGradient
 import com.appriyo.deulama.ui.theme.HangugColors
 import com.appriyo.deulama.ui.theme.HangugGlassOverlay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -73,10 +80,23 @@ fun DramaDetailsScreen(
     viewModel: DramaDetailsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(dramaId) { viewModel.load(dramaId) }
 
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is DramaDetailsEvent.Info -> scope.launch {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { /* hidden under the banner */ },
@@ -94,6 +114,24 @@ fun DramaDetailsScreen(
                     navigationIconContentColor = HangugColors.TextPrimary,
                 ),
             )
+        },
+        bottomBar = {
+            // Only render the engagement bar once we have the drama.
+            val s = state
+            if (s is DramaDetailsUiState.Success) {
+                Surface(
+                    color = HangugColors.BgElevated,
+                    tonalElevation = 6.dp,
+                ) {
+                    DramaEngagementActions(
+                        dramaId = s.drama.dramaId,
+                        onFavoriteToggle = { viewModel.toggleFavorite() },
+                        onWatchLaterToggle = { viewModel.toggleWatchLater() },
+                        onMarkWatched = { viewModel.markWatched() },
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    )
+                }
+            }
         },
     ) { innerPadding ->
         when (val s = state) {

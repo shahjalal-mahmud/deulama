@@ -1,4 +1,4 @@
-package com.appriyo.deulama.presentation.discover
+package com.appriyo.deulama.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
@@ -30,45 +29,42 @@ import com.appriyo.deulama.domain.repository.FavoritesRepository
 import com.appriyo.deulama.domain.repository.WatchLaterRepository
 import com.appriyo.deulama.domain.repository.WatchedRepository
 import com.appriyo.deulama.ui.theme.HangugColors
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import org.koin.compose.koinInject
 
 /**
- * Pill row of 5 action buttons that share the same "fly the card
- * off-screen" path as a real swipe. Keeping these visual mirrors of
- * the deck gesture (so users learn the shortcut).
+ * Tappable pill row of the three persistent engagement actions
+ * (Favorite, Watch Later, Watched). Read state is bound to the
+ * repositories' Room Flows so the icons update instantly when the
+ * user taps, including after a sync-on-login replay.
  *
- * Wire order (left to right):
- *   Dislike · Favorite · Skip · Watch Later · Watched · Like
- * (Dislike on the far left, Like on the far right — same direction
- *  language as the card itself.)
+ * Used in:
+ *   - DramaDetailsScreen — fixed action bar below the synopsis.
+ *   - (DiscoverScreen continues to use the existing `DeckActionRow`
+ *     so the swipe-deck gestures stay mapped to the same buttons.)
  *
- * `activeDramaId` is used to bind the Favorite / Watch Later / Watched
- * buttons to the persisted Room state. Pass `null` to disable state
- * binding (the buttons still fire actions but don't reflect server
- * state).
+ * Note: callers are responsible for triggering the actual repository
+ * call in a coroutine. Each callback is fire-and-forget — the optimistic
+ * UI already happens via the Room Flow, so a slow API call won't block
+ * the click.
  */
 @Composable
-fun DeckActionRow(
-    onAction: (DeckAction) -> Unit,
-    activeDramaId: Int? = null,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
+fun DramaEngagementActions(
+    dramaId: Int,
+    onFavoriteToggle: () -> Unit,
+    onWatchLaterToggle: () -> Unit,
+    onMarkWatched: () -> Unit,
     favoritesRepository: FavoritesRepository = koinInject(),
     watchLaterRepository: WatchLaterRepository = koinInject(),
     watchedRepository: WatchedRepository = koinInject(),
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
 ) {
-    val isFavFlow: Flow<Boolean> = activeDramaId?.let { favoritesRepository.isFavorited(it) }
-        ?: flowOf(false)
-    val isQueuedFlow: Flow<Boolean> = activeDramaId?.let { watchLaterRepository.isQueued(it) }
-        ?: flowOf(false)
-    val isWatchedFlow: Flow<Boolean> = activeDramaId?.let { watchedRepository.isMarkedWatched(it) }
-        ?: flowOf(false)
-
-    val isFav by isFavFlow.collectAsStateWithLifecycle(initialValue = false)
-    val isQueued by isQueuedFlow.collectAsStateWithLifecycle(initialValue = false)
-    val isWatched by isWatchedFlow.collectAsStateWithLifecycle(initialValue = false)
+    val isFav by favoritesRepository.isFavorited(dramaId)
+        .collectAsStateWithLifecycle(initialValue = false)
+    val isQueued by watchLaterRepository.isQueued(dramaId)
+        .collectAsStateWithLifecycle(initialValue = false)
+    val isWatched by watchedRepository.isMarkedWatched(dramaId)
+        .collectAsStateWithLifecycle(initialValue = false)
 
     Row(
         modifier = modifier
@@ -78,55 +74,28 @@ fun DeckActionRow(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
         ActionCircle(
-            icon = Icons.Filled.Close,
-            tint = HangugColors.Danger,
+            icon = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+            tint = HangugColors.Primary,
             background = HangugColors.SurfaceContainer,
-            contentDescription = "Dislike",
-            onClick = { onAction(DeckAction.Dislike) },
+            contentDescription = if (isFav) "Remove from favorites" else "Add to favorites",
+            onClick = onFavoriteToggle,
             enabled = enabled,
         )
         ActionCircle(
             icon = if (isQueued) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
             tint = HangugColors.Secondary,
             background = HangugColors.SurfaceContainer,
-            contentDescription = if (isQueued) "Remove from watch later" else "Watch later",
-            onClick = { onAction(DeckAction.WatchLater) },
+            contentDescription = if (isQueued) "Remove from watch later" else "Add to watch later",
+            onClick = onWatchLaterToggle,
             enabled = enabled,
-        )
-        // Centre button is a slightly larger "skip" affordance that
-        // also maps to Dislike — gives the row visual balance.
-        ActionCircle(
-            icon = Icons.Filled.Close,
-            tint = HangugColors.TextSecondary,
-            background = HangugColors.SurfaceContainerHigh,
-            contentDescription = "Skip",
-            onClick = { onAction(DeckAction.Dislike) },
-            enabled = enabled,
-            size = 48.dp,
         )
         ActionCircle(
             icon = if (isWatched) Icons.Filled.CheckCircle else Icons.Filled.Check,
-            tint = if (isWatched) HangugColors.Tertiary else HangugColors.Secondary,
-            background = HangugColors.SurfaceContainer,
-            contentDescription = if (isWatched) "Already watched" else "Watched",
-            onClick = { onAction(DeckAction.Watched) },
-            enabled = enabled && !isWatched, // no un-watch affordance
-        )
-        ActionCircle(
-            icon = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-            tint = HangugColors.Primary,
-            background = HangugColors.SurfaceContainer,
-            contentDescription = if (isFav) "Remove from favorites" else "Favorite",
-            onClick = { onAction(DeckAction.Favorite) },
-            enabled = enabled,
-        )
-        ActionCircle(
-            icon = Icons.Filled.Favorite,
             tint = HangugColors.Tertiary,
             background = HangugColors.SurfaceContainer,
-            contentDescription = "Like",
-            onClick = { onAction(DeckAction.Like) },
-            enabled = enabled,
+            contentDescription = if (isWatched) "Already watched" else "Mark as watched",
+            onClick = onMarkWatched,
+            enabled = enabled && !isWatched, // no un-watch affordance
         )
     }
 }
