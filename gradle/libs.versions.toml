@@ -13,6 +13,8 @@ composeBom = "2024.09.00"
 kotlinxSerializationJson = "1.7.3"
 kotlinxCoroutinesAndroid = "1.9.0"
 
+mockk = "1.13.13"
+
 navigationCompose = "2.8.4"
 
 koinBom = "4.0.0"
@@ -73,6 +75,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesAndroid" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
