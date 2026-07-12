@@ -13,7 +13,8 @@ import retrofit2.http.Query
  * NOT touch the auth token — the [AuthInterceptor] will simply add no
  * header when the SessionManager has no token stored.
  *
- *  - [listDramas] — paginated + sortable catalog.
+ *  - [listDramas] — paginated + sortable catalog, optionally filtered
+ *                    by genre.
  *  - [getDrama]   — single drama details.
  */
 interface DramaApi {
@@ -21,12 +22,16 @@ interface DramaApi {
     /**
      * GET /api/dramas
      *
-     * @param page  1-indexed page number; the caller is responsible for
-     *              clamping to >= 1. Out-of-range values produce 422.
-     * @param limit page size in [1..100]; default 20. Caller must clamp.
-     * @param sort  one of `title | release_year | imdb_rating | created_at`.
-     *              Anything else produces 422 — never pass user input.
-     * @param order one of `asc | desc`. Same caveat as [sort].
+     * @param page   1-indexed page number; the caller is responsible for
+     *               clamping to >= 1. Out-of-range values produce 422.
+     * @param limit  page size in [1..100]; default 20. Caller must clamp.
+     * @param sort   one of `title | release_year | imdb_rating | created_at`.
+     *               Anything else produces 422 — never pass user input.
+     * @param order  one of `asc | desc`. Same caveat as [sort].
+     * @param genre  optional genre filter matched server-side against the
+     *               drama's genre list. Retrofit omits the query param
+     *               entirely when this is null, so passing null here is
+     *               the same as not filtering.
      */
     @GET("api/dramas")
     suspend fun listDramas(
@@ -34,6 +39,7 @@ interface DramaApi {
         @Query("limit") limit: Int,
         @Query("sort") sort: String,
         @Query("order") order: String,
+        @Query("genre") genre: String?,
     ): Envelope<DramaListDto>
 
     /**
