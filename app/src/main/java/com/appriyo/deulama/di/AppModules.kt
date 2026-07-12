@@ -11,6 +11,7 @@ import com.appriyo.deulama.data.repository.EngagementSyncService
 import com.appriyo.deulama.data.repository.FavoritesRepositoryImpl
 import com.appriyo.deulama.data.repository.GenreStatsRepositoryImpl
 import com.appriyo.deulama.data.repository.NoOpFailureBus
+import com.appriyo.deulama.data.repository.ProfileRepositoryImpl
 import com.appriyo.deulama.data.repository.RecommendationsRepositoryImpl
 import com.appriyo.deulama.data.repository.SwipeRepositoryImpl
 import com.appriyo.deulama.data.repository.WatchLaterRepositoryImpl
@@ -19,6 +20,7 @@ import com.appriyo.deulama.domain.repository.AuthRepository
 import com.appriyo.deulama.domain.repository.DramaRepository
 import com.appriyo.deulama.domain.repository.FavoritesRepository
 import com.appriyo.deulama.domain.repository.GenreStatsRepository
+import com.appriyo.deulama.domain.repository.ProfileRepository
 import com.appriyo.deulama.domain.repository.RecommendationsRepository
 import com.appriyo.deulama.domain.repository.SwipeRepository
 import com.appriyo.deulama.domain.repository.WatchLaterRepository
@@ -29,6 +31,7 @@ import com.appriyo.deulama.presentation.discover.DiscoverViewModel
 import com.appriyo.deulama.presentation.discover.SwipeDeckViewModel
 import com.appriyo.deulama.presentation.genre.GenreStatsViewModel
 import com.appriyo.deulama.presentation.home.HomeViewModel
+import com.appriyo.deulama.presentation.profile.EditProfileViewModel
 import com.appriyo.deulama.presentation.recommendations.RecommendationsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +72,9 @@ private val appOnlyModule = module {
     single<GenreStatsRepository> {
         GenreStatsRepositoryImpl(get(), get())
     }
+    single<ProfileRepository> {
+        ProfileRepositoryImpl(get(), get(), get())
+    }
 
     // Phase-4 sync-on-login — wired to start() from HangugDeulamaApp.
     single {
@@ -94,6 +100,7 @@ private val appOnlyModule = module {
     viewModel { DramaDetailsViewModel(get(), get(), get(), get()) }
     viewModel { RecommendationsViewModel(get(), get(), get()) }
     viewModel { GenreStatsViewModel(get(), get()) }
+    viewModel { EditProfileViewModel(get(), get()) }
 }
 
 val appModules = listOf(
