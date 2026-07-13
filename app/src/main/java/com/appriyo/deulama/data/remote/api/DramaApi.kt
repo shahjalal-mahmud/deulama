@@ -1,7 +1,7 @@
 package com.appriyo.deulama.data.remote.api
 
-import com.appriyo.deulama.data.remote.dto.DramaDto
 import com.appriyo.deulama.data.remote.dto.DramaListDto
+import com.appriyo.deulama.data.remote.dto.DramaSingleDto
 import com.appriyo.deulama.data.remote.dto.Envelope
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -45,9 +45,16 @@ interface DramaApi {
     /**
      * GET /api/dramas/{id}
      *
+     * Response body shape:
+     *   { "success": true, "data": { "drama": { ...DramaDto fields... } } }
+     *
+     * Note that the single-drama endpoint wraps the inner object under a
+     * `drama` key — different from the list endpoint which uses
+     * `dramas: [...]`. That asymmetry is captured in [DramaSingleDto].
+     *
      * @param id drama primary key. Must be `>= 1` — the repository
      *           guards against 0 / negative values before calling.
      */
     @GET("api/dramas/{id}")
-    suspend fun getDrama(@Path("id") id: Int): Envelope<DramaDto>
+    suspend fun getDrama(@Path("id") id: Int): Envelope<DramaSingleDto>
 }

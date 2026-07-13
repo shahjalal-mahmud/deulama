@@ -75,7 +75,10 @@ class DramaRepositoryImpl(
             )
         }
         return when (val result = safeApiCall(json) { dramaApi.getDrama(id) }) {
-            is ApiResult.Success -> ApiResult.Success(result.value.toDomain())
+            // The single-drama endpoint wraps the inner object under
+            // a `drama` key (see DramaSingleDto), so we unwrap here
+            // before handing the domain model back to the caller.
+            is ApiResult.Success -> ApiResult.Success(result.value.drama.toDomain())
             is ApiResult.ValidationError -> result
             is ApiResult.Error -> result
             is ApiResult.NetworkError -> result

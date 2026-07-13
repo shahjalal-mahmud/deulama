@@ -26,3 +26,18 @@ data class DramaDto(
     val stars: String = "",
     val created_at: String,
 )
+
+/**
+ * Wrapper around a single drama in the `GET /api/dramas/{id}` response.
+ *
+ * The list endpoint (`GET /api/dramas`) returns the page as
+ * `{ dramas: [...], pagination: {...} }`, but the single-drama endpoint
+ * returns `{ drama: {...} }` — the API uses different keys for the two
+ * shapes even though the inner object is the same [DramaDto]. We model
+ * that asymmetry here so [DramaApi.getDrama] can decode the body
+ * without a custom deserializer.
+ */
+@Serializable
+data class DramaSingleDto(
+    val drama: DramaDto,
+)
