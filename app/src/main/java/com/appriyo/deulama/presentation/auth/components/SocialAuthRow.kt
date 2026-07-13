@@ -1,15 +1,14 @@
 package com.appriyo.deulama.presentation.auth.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,26 +17,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.appriyo.deulama.R
 import com.appriyo.deulama.ui.theme.HangugColors
 
 /**
- * Visual pass only — same composable signature, no click wiring added
- * or removed (matches the original, which is presentational only).
- * Each provider now gets a small circular badge and a soft card
- * elevation instead of a flat bordered box.
+ * Visual pass: swapped the flat letter badges ("G" / blank) for the
+ * real, full-color provider logos so the row reads as a proper,
+ * trustworthy sign-in row rather than a placeholder mockup.
+ *
+ * Requires two vector drawables in res/drawable:
+ *   - ic_google_logo.xml  (4-color Google "G")
+ *   - ic_apple_logo.xml   (Apple glyph)
  */
 @Composable
 fun SocialAuthRow(modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        SocialButton(badge = "G", text = "Google", modifier = Modifier.weight(1f))
-        SocialButton(badge = "", text = "Apple", modifier = Modifier.weight(1f))
+        SocialButton(
+            iconRes = R.drawable.ic_google_logo,
+            text = "Google",
+            modifier = Modifier.weight(1f),
+        )
+        SocialButton(
+            iconRes = R.drawable.ic_apple_logo,
+            text = "Apple",
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
 @Composable
-private fun SocialButton(badge: String, text: String, modifier: Modifier = Modifier) {
+private fun SocialButton(iconRes: Int, text: String, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .height(54.dp)
@@ -53,26 +65,17 @@ private fun SocialButton(badge: String, text: String, modifier: Modifier = Modif
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(HangugColors.BgElevated),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = badge,
-                color = HangugColors.TextPrimary,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = "$text logo",
+            modifier = Modifier.size(20.dp),
+        )
         Spacer(Modifier.size(10.dp))
         Text(
             text = text,
             color = HangugColors.TextPrimary,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }
