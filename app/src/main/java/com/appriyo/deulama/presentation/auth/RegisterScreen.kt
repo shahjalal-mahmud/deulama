@@ -6,9 +6,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,9 +28,9 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -45,7 +45,7 @@ import com.appriyo.deulama.presentation.auth.components.AuthHeroPanel
 import com.appriyo.deulama.presentation.auth.components.AuthPasswordField
 import com.appriyo.deulama.presentation.auth.components.AuthTextField
 import com.appriyo.deulama.presentation.components.ConnectionStatus
-import com.appriyo.deulama.presentation.components.GradientButton
+import com.appriyo.deulama.presentation.components.PrimaryButton
 import com.appriyo.deulama.presentation.components.StatusBanner
 import com.appriyo.deulama.ui.theme.HangugColors
 import org.koin.androidx.compose.koinViewModel
@@ -212,7 +212,7 @@ private fun RegisterScreenContent(
 
             Spacer(Modifier.size(28.dp))
 
-            GradientButton(
+            PrimaryButton(
                 text = if (isSubmitting) "Creating account" else "Create Account",
                 onClick = onSubmit,
                 loading = isSubmitting,
@@ -222,15 +222,23 @@ private fun RegisterScreenContent(
 
             Spacer(Modifier.size(20.dp))
 
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text(
                     text = "Already have an account? ",
                     color = HangugColors.TextSecondary,
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                TextButton(onClick = onGoToLogin, enabled = !isSubmitting, contentPadding = PaddingValues(0.dp)) {
-                    Text("Log in", color = HangugColors.Primary, fontWeight = FontWeight.Bold)
-                }
+                Text(
+                    text = "Log in",
+                    color = HangugColors.Primary,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.clickable(enabled = !isSubmitting, onClick = onGoToLogin),
+                )
             }
         }
     }
