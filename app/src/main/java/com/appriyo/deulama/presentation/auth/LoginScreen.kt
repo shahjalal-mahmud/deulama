@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,7 +25,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,7 +47,7 @@ import com.appriyo.deulama.presentation.auth.components.AuthPasswordField
 import com.appriyo.deulama.presentation.auth.components.AuthTextField
 import com.appriyo.deulama.presentation.auth.components.SocialAuthRow
 import com.appriyo.deulama.presentation.components.ConnectionStatus
-import com.appriyo.deulama.presentation.components.GradientButton
+import com.appriyo.deulama.presentation.components.PrimaryButton
 import com.appriyo.deulama.presentation.components.StatusBanner
 import com.appriyo.deulama.ui.theme.HangugColors
 import org.koin.androidx.compose.koinViewModel
@@ -184,7 +184,7 @@ private fun LoginScreenContent(
 
             Spacer(Modifier.size(28.dp))
 
-            GradientButton(
+            PrimaryButton(
                 text = if (isSubmitting) "Signing in" else "Get Started",
                 onClick = onSubmit,
                 loading = isSubmitting,
@@ -199,20 +199,32 @@ private fun LoginScreenContent(
                 enabled = !isSubmitting,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Continue browsing without an account", color = HangugColors.TextSecondary)
+                Text(
+                    "Continue browsing without an account",
+                    color = HangugColors.TextSecondary,
+                    fontWeight = FontWeight.Medium,
+                )
             }
 
             Spacer(Modifier.size(4.dp))
 
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text(
                     text = "Don't have an account? ",
                     color = HangugColors.TextSecondary,
                     style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                 )
-                TextButton(onClick = onGoToRegister, enabled = !isSubmitting, contentPadding = PaddingValues(0.dp)) {
-                    Text("Create account", color = HangugColors.Primary, fontWeight = FontWeight.Bold)
-                }
+                Text(
+                    text = "Create account",
+                    color = HangugColors.Primary,
+                    fontWeight = FontWeight.Bold,
+                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.clickable(enabled = !isSubmitting, onClick = onGoToRegister),
+                )
             }
         }
     }
@@ -220,7 +232,7 @@ private fun LoginScreenContent(
 
 /**
  * Divider with a soft fading gradient line either side of a pill-shaped
- * label badge, in place of the previous flat 1dp rule.
+ * label badge, in place of a flat 1dp rule.
  */
 @Composable
 private fun AuthDivider() {
@@ -245,8 +257,9 @@ private fun AuthDivider() {
             Text(
                 text = "OR CONTINUE WITH EMAIL",
                 style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                color = HangugColors.TextTertiary,
+                color = HangugColors.TextSecondary,
                 textAlign = TextAlign.Center,
+                fontWeight = FontWeight.SemiBold,
             )
         }
         androidx.compose.foundation.layout.Box(
