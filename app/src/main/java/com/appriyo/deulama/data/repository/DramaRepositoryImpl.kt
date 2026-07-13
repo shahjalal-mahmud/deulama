@@ -83,12 +83,15 @@ class DramaRepositoryImpl(
     }
 
     companion object {
-        /** Default page size for the catalog. Matches the API's default. */
-        private const val PAGE_SIZE = 20
+        /** Default page size for the catalog. Sized to fetch the full
+         *  newest-first list in a single round-trip so the home screen
+         *  shows every drama without triggering paginated reloads. */
+        private const val PAGE_SIZE = 50
 
-        /** First-load window — bigger than [PAGE_SIZE] so the first
-         *  scroll session doesn't trigger an immediate second load. */
-        private const val INITIAL_LOAD_SIZE = 20
+        /** First-load window. Matches [PAGE_SIZE] so the initial fetch
+         *  covers the entire catalog (up to [MAX_LIMIT] items) in one
+         *  request and subsequent scrolls don't need to page. */
+        private const val INITIAL_LOAD_SIZE = 50
 
         /** How many items before the end we pre-fetch the next page. */
         private const val PREFETCH_DISTANCE = 6
