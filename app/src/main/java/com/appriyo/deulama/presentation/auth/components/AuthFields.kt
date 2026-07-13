@@ -51,14 +51,13 @@ import com.appriyo.deulama.ui.theme.HangugColors
 
 /**
  * Text field matching the web's AuthInput: uppercase label above a
- * rounded, elevated field (not Material's floating-label outline).
- * Built on BasicTextField so the focus/error border glow can be
- * hand-tuned instead of fighting OutlinedTextField's built-in chrome.
+ * rounded, elevated field. Built on BasicTextField so the focus/error
+ * border glow can be hand-tuned instead of fighting OutlinedTextField's
+ * built-in chrome.
  *
- * Visual pass: leading icon now sits in a soft circular badge that
- * tints on focus, the field lifts with a subtle tinted shadow when
- * active, and the border thickens slightly for a crisper focus ring.
- * Same public API as before — no logic or callback changes.
+ * Fix: the placeholder and the real input text now share the exact
+ * same padding/box alignment, so the placeholder no longer floats
+ * above or below the typed text — both sit centered in the field.
  */
 @Composable
 fun AuthTextField(
@@ -101,7 +100,6 @@ fun AuthTextField(
         label = "authFieldIconBg",
     )
     val fieldElevation by animateColorAsState(
-        // reused as a cheap "is lifted" flag via alpha below; kept simple
         targetValue = HangugColors.Primary,
         animationSpec = tween(180),
         label = "authFieldElevationTint",
@@ -135,7 +133,7 @@ fun AuthTextField(
                 .clip(RoundedCornerShape(16.dp))
                 .background(HangugColors.BgElevated2)
                 .border(borderWidth, borderColor, RoundedCornerShape(16.dp))
-                .padding(horizontal = 12.dp, vertical = 4.dp),
+                .padding(horizontal = 12.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (leadingIcon != null) {
@@ -155,18 +153,21 @@ fun AuthTextField(
                 }
                 Spacer(Modifier.size(10.dp))
             }
-            Box(modifier = Modifier.weight(1f)) {
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart,
+            ) {
                 if (value.isEmpty()) {
                     Text(
                         text = placeholder,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = HangugColors.TextTertiary.copy(alpha = 0.7f),
+                        color = HangugColors.TextTertiary,
                     )
                 }
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = singleLine,
                     textStyle = LocalTextStyle.current.copy(
                         color = HangugColors.TextPrimary,
@@ -196,6 +197,7 @@ fun AuthTextField(
                     text = errorText,
                     style = MaterialTheme.typography.labelSmall,
                     color = HangugColors.Primary,
+                    fontWeight = FontWeight.Medium,
                 )
             }
         }
