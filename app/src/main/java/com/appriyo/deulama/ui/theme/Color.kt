@@ -59,6 +59,9 @@ object HangugColors {
     val OutlineVariant = Color(0xFF594142)
     val BorderSubtle = Color(0x40403132) // ~0.25 alpha of surface-container-highest
     val BorderStrong = Color(0xA6594142) // ~0.65 alpha
+    val ButtonPrimary = Color(0xFFB71C3A) // Deep, rich crimson - darker than before
+    val ButtonPrimaryDark = Color(0xFFB82A40) // Even darker for pressed state
+    val ButtonPrimaryDisabled = Color(0xFF7A3A4A) // Muted, darker disabled version
 }
 
 val HangugDarkColorScheme = darkColorScheme(
