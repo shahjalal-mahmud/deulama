@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.appriyo.deulama.domain.model.Drama
 import com.appriyo.deulama.presentation.components.GenreChip
 import com.appriyo.deulama.ui.theme.HangugColors
@@ -30,6 +31,11 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val goToDetails: (Drama) -> Unit = { onOpenDramaDetails(it.dramaId) }
+
+    // Collect the paged "All Dramas" stream here so it's shared with
+    // recompositions of the outer LazyColumn (e.g. when scrolling down
+    // to the section triggers a fresh emission from paging).
+    val allDramaItems = viewModel.allDrama.collectAsLazyPagingItems()
 
     Scaffold(containerColor = HangugColors.BgBase) { innerPadding ->
         val layoutDirection = LocalLayoutDirection.current
@@ -99,13 +105,14 @@ fun HomeScreen(
                 Spacer(Modifier.height(28.dp))
             }
 
-            // 10. All Dramas preview
+            // 10. All Dramas — full paginated catalog, newest first.
+            //    Rendered inside a single outer-LazyColumn item slot so
+            //    the section grows as new pages arrive without nesting
+            //    LazyColumns in the same scroll axis.
             item {
                 AllDramaPreview(
-                    items = uiState.allDramaPreview,
-                    loading = uiState.allDramaLoading,
+                    items = allDramaItems,
                     onDramaClick = goToDetails,
-                    onViewAll = onOpenDiscover,
                 )
             }
         }

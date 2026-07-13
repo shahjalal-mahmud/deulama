@@ -105,12 +105,21 @@ private fun HangugNavGraphLoaded(
             // user is already in the main graph (Profile, Discover,
             // etc.), leave the back stack alone so configuration
             // changes and tab switches aren't disrupted.
-            val currentRoute = navController.currentDestination
+            //
+            // We use `hasRoute<...>()` (the typed-route check the rest
+            // of this file already uses) instead of comparing
+            // `destination.route` to `Login::class.qualifiedName`.
+            // The string form is fragile across nav-compose versions
+            // and was the reason users were stuck on the Login screen
+            // every cold start even when DataStore still held a valid
+            // JWT — the redirect silently never matched and never
+            // fired, so the start destination's Login screen won.
+            val onAuthRoute = navController.currentDestination
                 ?.hierarchy
-                ?.lastOrNull()
-                ?.route
-            val onAuthRoute = currentRoute == HangugRoute.Login::class.qualifiedName ||
-                currentRoute == HangugRoute.Register::class.qualifiedName
+                ?.any {
+                    it.hasRoute(HangugRoute.Login::class) ||
+                        it.hasRoute(HangugRoute.Register::class)
+                } == true
             if (onAuthRoute) {
                 navController.navigateToMainGraph()
             }
