@@ -1,5 +1,7 @@
 package com.appriyo.deulama.presentation.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -17,12 +19,16 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.appriyo.deulama.domain.repository.FavoritesRepository
@@ -37,8 +43,13 @@ import org.koin.compose.koinInject
  * repositories' Room Flows so the icons update instantly when the
  * user taps, including after a sync-on-login replay.
  *
+ * Visual treatment mirrors the web app's rose/gold/mint accent split:
+ * each action gets its own soft tinted circle that brightens when
+ * active, instead of one flat neutral background for all three, so
+ * the state is legible at a glance.
+ *
  * Used in:
- *   - DramaDetailsScreen — fixed action bar below the synopsis.
+ *   - DramaDetailsScreen — floating engagement card below the content.
  *   - (DiscoverScreen continues to use the existing `DeckActionRow`
  *     so the swipe-deck gestures stay mapped to the same buttons.)
  *
@@ -71,12 +82,14 @@ fun DramaEngagementActions(
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         ActionCircle(
             icon = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
             tint = HangugColors.Primary,
-            background = HangugColors.SurfaceContainer,
+            background = if (isFav) HangugColors.Primary.copy(alpha = 0.18f) else HangugColors.SurfaceContainerHigh,
+            label = "Like",
+            active = isFav,
             contentDescription = if (isFav) "Remove from favorites" else "Add to favorites",
             onClick = onFavoriteToggle,
             enabled = enabled,
@@ -84,7 +97,9 @@ fun DramaEngagementActions(
         ActionCircle(
             icon = if (isQueued) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
             tint = HangugColors.Secondary,
-            background = HangugColors.SurfaceContainer,
+            background = if (isQueued) HangugColors.Secondary.copy(alpha = 0.18f) else HangugColors.SurfaceContainerHigh,
+            label = "Save",
+            active = isQueued,
             contentDescription = if (isQueued) "Remove from watch later" else "Add to watch later",
             onClick = onWatchLaterToggle,
             enabled = enabled,
@@ -92,7 +107,9 @@ fun DramaEngagementActions(
         ActionCircle(
             icon = if (isWatched) Icons.Filled.CheckCircle else Icons.Filled.Check,
             tint = HangugColors.Tertiary,
-            background = HangugColors.SurfaceContainer,
+            background = if (isWatched) HangugColors.Tertiary.copy(alpha = 0.18f) else HangugColors.SurfaceContainerHigh,
+            label = if (isWatched) "Watched" else "Mark watched",
+            active = isWatched,
             contentDescription = if (isWatched) "Already watched" else "Mark as watched",
             onClick = onMarkWatched,
             enabled = enabled && !isWatched, // no un-watch affordance
@@ -105,28 +122,47 @@ private fun ActionCircle(
     icon: ImageVector,
     tint: Color,
     background: Color,
+    label: String,
+    active: Boolean,
     contentDescription: String,
     onClick: () -> Unit,
     enabled: Boolean,
     size: androidx.compose.ui.unit.Dp = 52.dp,
 ) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(background),
-        colors = IconButtonDefaults.iconButtonColors(
-            contentColor = tint,
-            disabledContentColor = tint.copy(alpha = 0.3f),
-        ),
+    val animatedBg by animateColorAsState(
+        targetValue = background,
+        animationSpec = tween(220),
+        label = "actionCircleBg",
+    )
+
+    androidx.compose.foundation.layout.Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = tint,
-            modifier = Modifier.size(22.dp),
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(animatedBg),
+            colors = IconButtonDefaults.iconButtonColors(
+                contentColor = tint,
+                disabledContentColor = tint.copy(alpha = 0.35f),
+            ),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = if (enabled) tint else tint.copy(alpha = 0.35f),
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        androidx.compose.foundation.layout.Spacer(Modifier.size(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (active) tint else HangugColors.TextTertiary,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
 }
