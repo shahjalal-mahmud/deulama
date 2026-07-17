@@ -18,7 +18,7 @@ fake is in `UNIT_TEST_PLAN.md` instead — do not duplicate it here.
 > androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:<ver>")
 > ```
 > `room-testing` is required for migration tests; `paging-testing` for
-> §G; `mockk-android` improves fakes of platform types.
+> §G; `mockk-android[MANUAL_TEST_PLAN.md](../MANUAL_TEST_PLAN.md)` improves fakes of platform types.
 
 Tagging conventions are the same as `UNIT_TEST_PLAN.md`:
 
