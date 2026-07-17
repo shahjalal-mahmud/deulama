@@ -6,10 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class EngagementRequestDto(val drama_id: Int)
 
-/** Response payload the favorites / watch-later endpoints return.
- *  The API embeds a small `drama` object in `data.favorites[i]` /
- *  `data.watch_later[i]`. We don't model it yet — Phase 3 only
- *  needs the success/failure decision. */
+/** Response payload the favorites / watch-later POST endpoints return. */
 @Serializable
 data class EngagementRecordDto(
     val favorite_id: Int = 0,
@@ -25,56 +22,39 @@ data class EngagementRecordDto(
 //
 // The `GET /api/favorites` / `watch-later` / `watched` endpoints each
 // return a single-key object whose value is the list of engagement
-// rows. Each row carries the engagement id + timestamp AND an
-// embedded `drama` object so the client can render the timeline
-// without a second round-trip per entry.
+// rows.
 //
-// We share [EngagementListItemDto] across all three — the wire fields
-// differ only in the primary-key name (`favorite_id` vs
-// `watch_later_id` vs `watched_id`) and the timestamp key
-// (`created_at` vs `watched_at`). The repository mapper decides which
-// of those fields is canonical.
-
-/**
- * Shared shape of one row in `GET /api/favorites`,
- * `GET /api/watch-later`, `GET /api/watched`.
- *
- * Every primary-key field is defaulted so a single DTO parses all
- * three payloads. The timestamp field is named differently across
- * endpoints (`created_at` for favorites/watch-later, `watched_at`
- * for watched); we capture both defensively and let the mapper pick.
- */
-@Serializable
-data class EngagementListItemDto(
-    val favorite_id: Int = 0,
-    val watch_later_id: Int = 0,
-    val watched_id: Int = 0,
-    val user_id: Int = 0,
-    val drama_id: Int,
-    val created_at: String? = null,
-    val watched_at: String? = null,
-    /** Embedded drama — see [DramaDto]. Some older server payloads
-     *  omit it; treat as optional. */
-    val drama: DramaDto? = null,
-)
+// **Wire shape:** the PHP services flatten each row into a
+// `Drama::publicItem(...)` payload — i.e. the row IS a full Drama
+// object, not `{ drama_id, drama: {...} }`. There is no nested
+// `drama` field, no `favorite_id`/`watch_later_id`/`watched_id`, and
+// no engagement-specific timestamp (`favorited_at`/`queued_at`/
+// `watched_at`). The repository mapper only has the drama fields to
+// work with, so we use the drama's `created_at` (the row's creation
+// timestamp in the dramas table) as the display timestamp.
+//
+// The early design tried to model a wrapped shape and got it wrong —
+// every row came back with a null nested `drama` and the Activity
+// screen showed "No activity yet" even after the user had favorited
+// dramas. This DTO is the corrected, server-truth shape.
 
 /** `data` payload of `GET /api/favorites`. */
 @Serializable
 data class FavoritesListDto(
-    val favorites: List<EngagementListItemDto> = emptyList(),
+    val favorites: List<DramaDto> = emptyList(),
     val count: Int = 0,
 )
 
 /** `data` payload of `GET /api/watch-later`. */
 @Serializable
 data class WatchLaterListDto(
-    val watch_later: List<EngagementListItemDto> = emptyList(),
+    val watch_later: List<DramaDto> = emptyList(),
     val count: Int = 0,
 )
 
 /** `data` payload of `GET /api/watched`. */
 @Serializable
 data class WatchedListDto(
-    val watched: List<EngagementListItemDto> = emptyList(),
+    val watched: List<DramaDto> = emptyList(),
     val count: Int = 0,
 )

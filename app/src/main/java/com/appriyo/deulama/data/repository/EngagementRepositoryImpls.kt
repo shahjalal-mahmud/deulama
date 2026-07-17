@@ -13,7 +13,7 @@ import com.appriyo.deulama.data.remote.MIN_DRAMA_ID
 import com.appriyo.deulama.data.remote.api.FavoritesApi
 import com.appriyo.deulama.data.remote.api.WatchLaterApi
 import com.appriyo.deulama.data.remote.api.WatchedApi
-import com.appriyo.deulama.data.remote.dto.EngagementListItemDto
+import com.appriyo.deulama.data.remote.dto.DramaDto
 import com.appriyo.deulama.data.remote.dto.EngagementRequestDto
 import com.appriyo.deulama.data.remote.safeApiCall
 import com.appriyo.deulama.data.remote.safeApiCallRaw
@@ -143,7 +143,7 @@ class FavoritesRepositoryImpl(
     override suspend fun listFavorites(): ApiResult<List<EngagementEntry>> =
         when (val result = safeApiCall(json) { api.list() }) {
             is ApiResult.Success -> ApiResult.Success(
-                result.value.favorites.mapNotNull { it.toFavoriteEntry() },
+                result.value.favorites.map { it.toEngagementEntry(EngagementEntry.Kind.FAVORITED) },
             )
             is ApiResult.ValidationError -> result
             is ApiResult.Error -> result
@@ -215,7 +215,7 @@ class WatchLaterRepositoryImpl(
     override suspend fun listWatchLater(): ApiResult<List<EngagementEntry>> =
         when (val result = safeApiCall(json) { api.list() }) {
             is ApiResult.Success -> ApiResult.Success(
-                result.value.watch_later.mapNotNull { it.toWatchLaterEntry() },
+                result.value.watch_later.map { it.toEngagementEntry(EngagementEntry.Kind.WATCH_LATER) },
             )
             is ApiResult.ValidationError -> result
             is ApiResult.Error -> result
@@ -264,7 +264,7 @@ class WatchedRepositoryImpl(
     override suspend fun listWatched(): ApiResult<List<EngagementEntry>> =
         when (val result = safeApiCall(json) { api.list() }) {
             is ApiResult.Success -> ApiResult.Success(
-                result.value.watched.mapNotNull { it.toWatchedEntry() },
+                result.value.watched.map { it.toEngagementEntry(EngagementEntry.Kind.WATCHED) },
             )
             is ApiResult.ValidationError -> result
             is ApiResult.Error -> result
@@ -283,40 +283,23 @@ internal fun messageFor(result: ApiResult<*>): String = when (result) {
 
 // ---- Phase 7 list helpers -----------------------------------------------
 //
-// Each list endpoint returns rows where the embedded `drama` object
-// may be missing on older server payloads. We drop rows without a
-// drama — the timeline UI cannot render an entry without metadata.
+// Each list endpoint returns a flat list of `DramaDto` objects —
+// i.e. the row IS the drama, with no nested wrapper. We convert each
+// Drama to a domain Drama via the existing `toDomain()` mapper, and
+// stamp it with the engagement [kind]. The display timestamp falls
+// back to the drama's `created_at` because the server doesn't expose
+// the engagement's `favorited_at`/`queued_at`/`watched_at` columns
+// over the wire (the PHP services call `Drama::publicItem()` which
+// only emits drama-table fields).
 
 /**
- * Map a `favorites`/`watch_later` list-item DTO into a domain
- * [EngagementEntry]. Drops rows whose embedded `drama` is null so the
- * UI never has to handle a half-rendered row.
+ * Convert one list-row [DramaDto] into a domain [EngagementEntry]
+ * stamped with the caller-provided [kind]. Rows are never dropped —
+ * any DTO that parses at all has enough fields to render.
  */
-private fun EngagementListItemDto.toFavoriteEntry(): EngagementEntry? {
-    val d = drama?.toDomain() ?: return null
-    return EngagementEntry(
-        kind = EngagementEntry.Kind.FAVORITED,
-        drama = d,
-        timestamp = created_at.orEmpty(),
+private fun DramaDto.toEngagementEntry(kind: EngagementEntry.Kind): EngagementEntry =
+    EngagementEntry(
+        kind = kind,
+        drama = toDomain(),
+        timestamp = created_at,
     )
-}
-
-private fun EngagementListItemDto.toWatchLaterEntry(): EngagementEntry? {
-    val d = drama?.toDomain() ?: return null
-    return EngagementEntry(
-        kind = EngagementEntry.Kind.WATCH_LATER,
-        drama = d,
-        timestamp = created_at.orEmpty(),
-    )
-}
-
-/** Watched rows use `watched_at` instead of `created_at`. */
-private fun EngagementListItemDto.toWatchedEntry(): EngagementEntry? {
-    val d = drama?.toDomain() ?: return null
-    val ts = watched_at ?: created_at.orEmpty()
-    return EngagementEntry(
-        kind = EngagementEntry.Kind.WATCHED,
-        drama = d,
-        timestamp = ts,
-    )
-}
