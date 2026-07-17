@@ -19,12 +19,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -52,6 +51,7 @@ import coil3.request.crossfade
 import com.appriyo.deulama.BuildConfig
 import com.appriyo.deulama.domain.model.Drama
 import com.appriyo.deulama.domain.model.EngagementEntry
+import com.appriyo.deulama.presentation.util.ImageUrls
 import com.appriyo.deulama.ui.theme.HangugColors
 import org.koin.androidx.compose.koinViewModel
 
@@ -93,7 +93,7 @@ fun ActivityScreen(
                 ActivityUiState.SignedOut -> CenteredMessage(
                     title = "Sign in to see your activity",
                     subtitle = "Your favorites, watch-later picks, and watched dramas will show up here once you sign in.",
-                    icon = Icons.Filled.Login,
+                    icon = Icons.AutoMirrored.Filled.Login,
                     actionLabel = "Go to login",
                     onAction = onGoToLogin,
                 )
@@ -316,15 +316,9 @@ private data class ChipSpec(
 )
 
 /**
- * Resolve an absolute poster URL the API returns. Mirrors the same
- * helper used in EditProfileScreen — kept private to this file rather
- * than promoted, since both helpers are tiny and only consumed once.
+ * Resolve an absolute poster URL the API returns. Delegates to
+ * [ImageUrls.absolute] which adds [BuildConfig.API_BASE_URL] to
+ * relative server paths and passes absolute URLs through.
  */
-private fun resolveDramaPoster(drama: Drama): String? {
-    val path = drama.posterUrl ?: return null
-    if (path.isBlank()) return null
-    if (path.startsWith("http://") || path.startsWith("https://")) return path
-    val base = BuildConfig.API_BASE_URL.trimEnd('/')
-    val rel = path.trimStart('/')
-    return "$base/$rel"
-}
+private fun resolveDramaPoster(drama: Drama): String? =
+    ImageUrls.absolute(drama.posterUrl)

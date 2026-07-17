@@ -35,6 +35,7 @@ import com.appriyo.deulama.presentation.discover.SwipeDeckViewModel
 import com.appriyo.deulama.presentation.genre.GenreStatsViewModel
 import com.appriyo.deulama.presentation.home.HomeViewModel
 import com.appriyo.deulama.presentation.profile.EditProfileViewModel
+import com.appriyo.deulama.presentation.profile.ProfileViewModel
 import com.appriyo.deulama.presentation.recommendations.RecommendationsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -107,6 +108,7 @@ private val appOnlyModule = module {
     viewModel { RecommendationsViewModel(get(), get(), get()) }
     viewModel { GenreStatsViewModel(get(), get()) }
     viewModel { EditProfileViewModel(get(), get()) }
+    viewModel { ProfileViewModel(get(), get()) }
     viewModel { ActivityViewModel(get(), get()) }
 }
 
