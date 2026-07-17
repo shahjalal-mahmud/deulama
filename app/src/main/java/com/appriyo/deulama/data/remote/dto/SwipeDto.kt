@@ -18,13 +18,22 @@ data class SwipeRequestDto(
  * Wire shape of a single recorded swipe. Returned as `Envelope.data`
  * with HTTP `201` on first record and `200` on subsequent upserts —
  * both are success; the API treats them identically client-side.
+ *
+ * **Wire note:** the server only echoes back `user_id`, `drama_id`,
+ * `swipe_type`, and a server-side `outcome` marker (`inserted` /
+ * `updated`). It does NOT return `swipe_id`, `created_at`, or
+ * `updated_at` — those columns exist in the `swipes` table but the
+ * controller intentionally trims them from the response to keep the
+ * payload small. We mirror exactly that shape here; declaring the
+ * missing fields as required would make kotlinx.serialization throw
+ * `MissingFieldException` on every 2xx response, which `safeApiCall`
+ * would then misclassify as `ApiResult.NetworkError` (the
+ * "Can't reach the server" toast the user was seeing before the fix).
  */
 @Serializable
 data class SwipeRecordDto(
-    val swipe_id: Int,
     val user_id: Int,
     val drama_id: Int,
     val swipe_type: String,
-    val created_at: String,
-    val updated_at: String,
+    val outcome: String? = null,
 )

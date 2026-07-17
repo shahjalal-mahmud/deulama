@@ -6,6 +6,7 @@ import com.appriyo.deulama.data.remote.api.SwipeApi
 import com.appriyo.deulama.data.remote.dto.SwipeRequestDto
 import com.appriyo.deulama.data.remote.map
 import com.appriyo.deulama.data.remote.safeApiCall
+import com.appriyo.deulama.domain.model.SwipeOutcome
 import com.appriyo.deulama.domain.model.SwipeRecord
 import com.appriyo.deulama.domain.model.SwipeType
 import com.appriyo.deulama.domain.repository.SwipeRepository
@@ -36,6 +37,5 @@ internal fun com.appriyo.deulama.data.remote.dto.SwipeRecordDto.toDomain(): Swip
     SwipeRecord(
         dramaId = drama_id,
         swipeType = if (swipe_type == SwipeType.LIKE.wire) SwipeType.LIKE else SwipeType.DISLIKE,
-        createdAt = created_at,
-        updatedAt = updated_at,
+        outcome = SwipeOutcome.fromWire(outcome),
     )
