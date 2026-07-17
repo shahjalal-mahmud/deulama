@@ -11,32 +11,41 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,9 +53,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -68,7 +78,8 @@ import org.koin.androidx.compose.koinViewModel
  *
  * - Avatar: `AsyncImage` showing the current cached avatar (from the
  *   auth session, full URL via [BuildConfig.API_BASE_URL]) OR the just-
- *   picked local URI. "Change photo" launches
+ *   picked local URI, with a default person glyph fallback when no
+ *   image is available. "Change photo" launches
  *   [ActivityResultContracts.PickVisualMedia] (image-only). "Remove"
  *   clears the pending upload.
  * - Name: pre-seeded from the auth user. Trim happens on submit, not
@@ -100,15 +111,21 @@ fun EditProfileScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Edit Profile") },
+                title = { Text("Edit Profile", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    TextButton(
-                        onClick = onBack,
-                        enabled = !form.isSubmitting,
-                    ) { Text("← Back") }
+                    IconButton(onClick = onBack, enabled = !form.isSubmitting) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                ),
             )
         }
     ) { innerPadding ->
@@ -159,6 +176,12 @@ private fun EditProfileScreenContent(
             ?: resolveAvatarUrl(currentImagePath)
     }
 
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = HangugColors.Primary,
+        focusedLabelColor = HangugColors.Primary,
+        cursorColor = HangugColors.Primary,
+    )
+
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -168,42 +191,46 @@ private fun EditProfileScreenContent(
     ) {
         // ---- Avatar ----
         Box(contentAlignment = Alignment.BottomEnd) {
-            if (avatarModel != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(avatarModel)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "Profile avatar",
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(
-                        // Coil ignores this on image-only loads, but it
-                        // satisfies the placeholder signature.
-                        android.R.drawable.ic_menu_gallery,
-                    ),
-                    error = painterResource(android.R.drawable.ic_menu_report_image),
-                    modifier = Modifier
-                        .size(112.dp)
-                        .clip(CircleShape)
-                        .border(2.dp, HangugColors.Primary, CircleShape)
-                        .background(HangugColors.SurfaceContainer, CircleShape),
-                )
-            } else {
-                // The `image` field is never null per api.md (always
-                // returns at least default.png), so this branch should
-                // only ever fire while the auth state is still Loading.
-                Box(
-                    modifier = Modifier
-                        .size(112.dp)
-                        .clip(CircleShape)
-                        .background(HangugColors.SurfaceContainer, CircleShape),
-                )
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(HangugColors.SurfaceContainer)
+                    .border(4.dp, HangugColors.SurfaceContainerLow, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (avatarModel != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(avatarModel)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Profile avatar",
+                        contentScale = ContentScale.Crop,
+                        placeholder = rememberVectorPainter(Icons.Filled.Person),
+                        error = rememberVectorPainter(Icons.Filled.Person),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                    )
+                } else {
+                    // The `image` field is never null per api.md (always
+                    // returns at least default.png), so this branch should
+                    // only ever fire while the auth state is still Loading.
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = "Default avatar",
+                        tint = HangugColors.TextTertiary,
+                        modifier = Modifier.size(56.dp),
+                    )
+                }
             }
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(HangugColors.Primary)
+                    .border(3.dp, MaterialTheme.colorScheme.background, CircleShape)
                     .clickable(enabled = !form.isSubmitting, onClick = onPickPhoto),
                 contentAlignment = Alignment.Center,
             ) {
@@ -211,11 +238,11 @@ private fun EditProfileScreenContent(
                     imageVector = Icons.Filled.CameraAlt,
                     contentDescription = "Change photo",
                     tint = HangugColors.OnPrimary,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         Text(
             text = currentEmail,
             style = MaterialTheme.typography.labelSmall,
@@ -223,13 +250,13 @@ private fun EditProfileScreenContent(
         )
 
         if (form.imageBytes != null) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             TextButton(onClick = onRemovePhoto, enabled = !form.isSubmitting) {
                 Text("Remove new photo", color = HangugColors.Danger)
             }
         }
         if (form.imageError != null) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = form.imageError,
                 color = HangugColors.Error,
@@ -237,86 +264,92 @@ private fun EditProfileScreenContent(
             )
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(28.dp))
 
-        // ---- Name ----
-        OutlinedTextField(
-            value = form.name,
-            onValueChange = onNameChange,
-            label = { Text("Full name") },
-            singleLine = true,
-            isError = form.nameError != null,
-            supportingText = form.nameError?.let { { Text(it, color = HangugColors.Error) } },
-            enabled = !form.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // ---- Basic info card ----
+        SectionCard {
+            SectionHeading(icon = Icons.Filled.Person, title = "Basic info")
+            Spacer(Modifier.height(14.dp))
+            OutlinedTextField(
+                value = form.name,
+                onValueChange = onNameChange,
+                label = { Text("Full name") },
+                singleLine = true,
+                isError = form.nameError != null,
+                supportingText = form.nameError?.let { { Text(it, color = HangugColors.Error) } },
+                enabled = !form.isSubmitting,
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // ---- Password section ----
-        Text(
-            text = "Change password",
-            style = MaterialTheme.typography.titleSmall,
-            color = HangugColors.TextPrimary,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-        )
-        Text(
-            text = "Leave blank to keep your current password.",
-            style = MaterialTheme.typography.labelSmall,
-            color = HangugColors.TextSecondary,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-        )
-        HorizontalDivider(color = HangugColors.BorderSubtle)
-        Spacer(Modifier.height(12.dp))
+        // ---- Password card ----
+        SectionCard {
+            SectionHeading(icon = Icons.Filled.Lock, title = "Change password")
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Leave blank to keep your current password.",
+                style = MaterialTheme.typography.labelSmall,
+                color = HangugColors.TextSecondary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 14.dp),
+            )
 
-        OutlinedTextField(
-            value = form.currentPassword,
-            onValueChange = onCurrentPasswordChange,
-            label = { Text("Current password") },
-            singleLine = true,
-            isError = form.currentPasswordError != null,
-            supportingText = form.currentPasswordError?.let {
-                { Text(it, color = HangugColors.Error) }
-            },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            enabled = !form.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = form.newPassword,
-            onValueChange = onNewPasswordChange,
-            label = { Text("New password") },
-            singleLine = true,
-            isError = form.newPasswordError != null,
-            supportingText = form.newPasswordError?.let {
-                { Text(it, color = HangugColors.Error) }
-            },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            enabled = !form.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = form.confirmPassword,
-            onValueChange = onConfirmPasswordChange,
-            label = { Text("Confirm new password") },
-            singleLine = true,
-            isError = form.confirmPasswordError != null,
-            supportingText = form.confirmPasswordError?.let {
-                { Text(it, color = HangugColors.Error) }
-            },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            enabled = !form.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
-        )
+            OutlinedTextField(
+                value = form.currentPassword,
+                onValueChange = onCurrentPasswordChange,
+                label = { Text("Current password") },
+                singleLine = true,
+                isError = form.currentPasswordError != null,
+                supportingText = form.currentPasswordError?.let {
+                    { Text(it, color = HangugColors.Error) }
+                },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                enabled = !form.isSubmitting,
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = form.newPassword,
+                onValueChange = onNewPasswordChange,
+                label = { Text("New password") },
+                singleLine = true,
+                isError = form.newPasswordError != null,
+                supportingText = form.newPasswordError?.let {
+                    { Text(it, color = HangugColors.Error) }
+                },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                enabled = !form.isSubmitting,
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = form.confirmPassword,
+                onValueChange = onConfirmPasswordChange,
+                label = { Text("Confirm new password") },
+                singleLine = true,
+                isError = form.confirmPasswordError != null,
+                supportingText = form.confirmPasswordError?.let {
+                    { Text(it, color = HangugColors.Error) }
+                },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                enabled = !form.isSubmitting,
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         // ---- Banner ----
         if (form.banner != null) {
@@ -341,14 +374,13 @@ private fun EditProfileScreenContent(
         Button(
             onClick = onSubmit,
             enabled = !form.isSubmitting,
+            shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = HangugColors.PrimaryContainer,
                 contentColor = HangugColors.OnPrimary,
             ),
             contentPadding = PaddingValues(vertical = 14.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(HangugColors.PrimaryContainer, RoundedCornerShape(12.dp)),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             if (form.isSubmitting) {
                 CircularProgressIndicator(
@@ -357,7 +389,7 @@ private fun EditProfileScreenContent(
                     modifier = Modifier.size(18.dp),
                 )
             } else {
-                Text("Save changes", color = HangugColors.OnPrimary)
+                Text("Save changes", color = HangugColors.OnPrimary, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -370,12 +402,56 @@ private fun EditProfileScreenContent(
         OutlinedButton(
             onClick = onDiscard,
             enabled = !form.isSubmitting,
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = HangugColors.Secondary),
+            contentPadding = PaddingValues(vertical = 14.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Discard changes", color = HangugColors.Secondary)
+            Text("Discard changes", fontWeight = FontWeight.SemiBold)
         }
 
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+// ---- Reusable sub-components ------------------------------------------------
+
+@Composable
+private fun SectionCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = HangugColors.SurfaceContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(18.dp), content = content)
+    }
+}
+
+@Composable
+private fun SectionHeading(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(HangugColors.Primary.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = HangugColors.Primary,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = HangugColors.TextPrimary,
+        )
     }
 }
 
