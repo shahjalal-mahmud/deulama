@@ -2,28 +2,35 @@ package com.appriyo.deulama.presentation.discover
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.appriyo.deulama.domain.repository.FavoritesRepository
@@ -35,19 +42,15 @@ import kotlinx.coroutines.flow.flowOf
 import org.koin.compose.koinInject
 
 /**
- * Pill row of 5 action buttons that share the same "fly the card
- * off-screen" path as a real swipe. Keeping these visual mirrors of
- * the deck gesture (so users learn the shortcut).
+ * Floating pill of the 3 *persisted* deck actions — Watch Later,
+ * Favorite, Watched. Like / Dislike are deliberately NOT buttons here:
+ * they only fire from the swipe gesture on the card itself, matching
+ * dating-app conventions and keeping this row free of ambiguity about
+ * which interaction does what.
  *
- * Wire order (left to right):
- *   Dislike · Favorite · Skip · Watch Later · Watched · Like
- * (Dislike on the far left, Like on the far right — same direction
- *  language as the card itself.)
- *
- * `activeDramaId` is used to bind the Favorite / Watch Later / Watched
- * buttons to the persisted Room state. Pass `null` to disable state
- * binding (the buttons still fire actions but don't reflect server
- * state).
+ * `activeDramaId` binds each button to its persisted Room state so the
+ * icon + label reflect saved status. Pass `null` to disable binding
+ * (buttons still fire actions but won't show filled/active state).
  */
 @Composable
 fun DeckActionRow(
@@ -70,94 +73,90 @@ fun DeckActionRow(
     val isQueued by isQueuedFlow.collectAsStateWithLifecycle(initialValue = false)
     val isWatched by isWatchedFlow.collectAsStateWithLifecycle(initialValue = false)
 
-    Row(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            .padding(horizontal = 28.dp),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = HangugColors.SurfaceContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
     ) {
-        ActionCircle(
-            icon = Icons.Filled.Close,
-            tint = HangugColors.Danger,
-            background = HangugColors.SurfaceContainer,
-            contentDescription = "Dislike",
-            onClick = { onAction(DeckAction.Dislike) },
-            enabled = enabled,
-        )
-        ActionCircle(
-            icon = if (isQueued) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-            tint = HangugColors.Secondary,
-            background = HangugColors.SurfaceContainer,
-            contentDescription = if (isQueued) "Remove from watch later" else "Watch later",
-            onClick = { onAction(DeckAction.WatchLater) },
-            enabled = enabled,
-        )
-        // Centre button is a slightly larger "skip" affordance that
-        // also maps to Dislike — gives the row visual balance.
-        ActionCircle(
-            icon = Icons.Filled.Close,
-            tint = HangugColors.TextSecondary,
-            background = HangugColors.SurfaceContainerHigh,
-            contentDescription = "Skip",
-            onClick = { onAction(DeckAction.Dislike) },
-            enabled = enabled,
-            size = 48.dp,
-        )
-        ActionCircle(
-            icon = if (isWatched) Icons.Filled.CheckCircle else Icons.Filled.Check,
-            tint = if (isWatched) HangugColors.Tertiary else HangugColors.Secondary,
-            background = HangugColors.SurfaceContainer,
-            contentDescription = if (isWatched) "Already watched" else "Watched",
-            onClick = { onAction(DeckAction.Watched) },
-            enabled = enabled && !isWatched, // no un-watch affordance
-        )
-        ActionCircle(
-            icon = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-            tint = HangugColors.Primary,
-            background = HangugColors.SurfaceContainer,
-            contentDescription = if (isFav) "Remove from favorites" else "Favorite",
-            onClick = { onAction(DeckAction.Favorite) },
-            enabled = enabled,
-        )
-        ActionCircle(
-            icon = Icons.Filled.Favorite,
-            tint = HangugColors.Tertiary,
-            background = HangugColors.SurfaceContainer,
-            contentDescription = "Like",
-            onClick = { onAction(DeckAction.Like) },
-            enabled = enabled,
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ActionButton(
+                icon = if (isQueued) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                label = if (isQueued) "Queued" else "Later",
+                active = isQueued,
+                tint = HangugColors.Secondary,
+                contentDescription = if (isQueued) "Remove from watch later" else "Save to watch later",
+                onClick = { onAction(DeckAction.WatchLater) },
+                enabled = enabled,
+            )
+            ActionButton(
+                icon = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                label = "Favorite",
+                active = isFav,
+                tint = HangugColors.Primary,
+                contentDescription = if (isFav) "Remove from favorites" else "Save to favorites",
+                onClick = { onAction(DeckAction.Favorite) },
+                enabled = enabled,
+            )
+            ActionButton(
+                icon = if (isWatched) Icons.Filled.CheckCircle else Icons.Filled.Check,
+                label = if (isWatched) "Watched" else "Mark seen",
+                active = isWatched,
+                tint = HangugColors.Tertiary,
+                contentDescription = if (isWatched) "Already watched" else "Mark as watched",
+                onClick = { onAction(DeckAction.Watched) },
+                enabled = enabled && !isWatched, // no un-watch affordance
+            )
+        }
     }
 }
 
 @Composable
-private fun ActionCircle(
+private fun ActionButton(
     icon: ImageVector,
+    label: String,
+    active: Boolean,
     tint: Color,
-    background: Color,
     contentDescription: String,
     onClick: () -> Unit,
     enabled: Boolean,
-    size: androidx.compose.ui.unit.Dp = 52.dp,
 ) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(background),
-        colors = IconButtonDefaults.iconButtonColors(
-            contentColor = tint,
-            disabledContentColor = tint.copy(alpha = 0.3f),
-        ),
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = tint,
-            modifier = Modifier.size(22.dp),
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(if (active) tint.copy(alpha = 0.16f) else HangugColors.SurfaceContainerHigh),
+            colors = IconButtonDefaults.iconButtonColors(
+                contentColor = tint,
+                disabledContentColor = tint.copy(alpha = 0.3f),
+            ),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = tint,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (active) tint else HangugColors.TextSecondary,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
 }
