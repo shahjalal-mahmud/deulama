@@ -59,6 +59,7 @@ import com.appriyo.deulama.presentation.auth.AuthUiState
 import com.appriyo.deulama.presentation.auth.AuthViewModel
 import com.appriyo.deulama.presentation.components.ConnectionStatus
 import com.appriyo.deulama.presentation.components.StatusBanner
+import com.appriyo.deulama.presentation.util.ImageUrls
 import com.appriyo.deulama.ui.theme.HangugColors
 import org.koin.androidx.compose.koinViewModel
 
@@ -381,17 +382,8 @@ private fun EditProfileScreenContent(
 /**
  * Build the absolute URL for an avatar path returned by the API.
  *
- * The server stores `profile_image` as a **relative** URL like
- * `uploads/profile/default.png` (see api.md — login response shape).
- * We prefix with [BuildConfig.API_BASE_URL] to make it loadable from
- * Coil. Already-absolute URLs (`http://`, `https://`) pass through.
- *
- * Returns `null` for null/blank inputs.
+ * Delegates to [ImageUrls.absolute] — which adds the
+ * [BuildConfig.API_BASE_URL] prefix to relative server paths like
+ * `uploads/profile/default.png` and passes absolute URLs through.
  */
-private fun resolveAvatarUrl(path: String?): Any? {
-    if (path.isNullOrBlank()) return null
-    if (path.startsWith("http://") || path.startsWith("https://")) return path
-    val base = BuildConfig.API_BASE_URL.trimEnd('/')
-    val rel = path.trimStart('/')
-    return "$base/$rel"
-}
+private fun resolveAvatarUrl(path: String?): Any? = ImageUrls.absolute(path)
