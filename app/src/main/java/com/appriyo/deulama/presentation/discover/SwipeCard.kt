@@ -46,9 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.appriyo.deulama.domain.model.Drama
-import com.appriyo.deulama.ui.theme.HangugBrandGradient
 import com.appriyo.deulama.ui.theme.HangugColors
-import com.appriyo.deulama.ui.theme.HangugGlassOverlay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -246,7 +244,7 @@ private fun BackingCard(
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            Box(modifier = Modifier.fillMaxSize().background(HangugBrandGradient)) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 if (!drama.posterUrl.isNullOrBlank()) {
                     AsyncImage(
                         model = drama.posterUrl,
@@ -272,7 +270,7 @@ private fun BackingCard(
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color(0xAA0B0708)),
+                                colors = listOf(Color.Transparent, Color(0xCC000000)),
                                 startY = 0f,
                                 endY = Float.POSITIVE_INFINITY,
                             ),
@@ -299,7 +297,7 @@ fun SwipeCardFace(
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            Box(modifier = Modifier.fillMaxSize().background(HangugBrandGradient)) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 if (!drama.posterUrl.isNullOrBlank()) {
                     AsyncImage(
                         model = drama.posterUrl,
@@ -320,7 +318,20 @@ fun SwipeCardFace(
                         )
                     }
                 }
-                Box(modifier = Modifier.fillMaxSize().background(HangugGlassOverlay))
+                // Bottom-only neutral scrim so the title / year /
+                // storyline stay legible regardless of poster art
+                // — no brand-tinted wash on top of the image itself.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color(0xCC000000)),
+                                startY = 0f,
+                                endY = Float.POSITIVE_INFINITY,
+                            ),
+                        ),
+                )
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
