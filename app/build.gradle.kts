@@ -38,8 +38,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // TODO: replace with the real production domain before shipping.
-            buildConfigField("String", "API_BASE_URL", "\"https://TODO-your-production-domain.com/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://api.appriyo.com/hangug/\"")
         }
     }
     compileOptions {
