@@ -33,7 +33,8 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.104/hangug-api/public/\"")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
